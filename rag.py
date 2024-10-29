@@ -40,27 +40,57 @@ system_template = '''
 Eres un asistente para tareas de respuestas a preguntas sobre estadística.
 Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
 Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
+En caso de dar ejemplos o indicar algún capítulo acompañarlo con el nombre del documento de donde se sacó la información.
 Si no sabes la respuesta simplemente menciona que no la sabes.
+Pregunta:
+{input}
 
+Contexto:
 {context}
 '''
+from langchain.chains import create_history_aware_retriever
+from langchain_core.prompts import MessagesPlaceholder
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
-prompt = ChatPromptTemplate([
-    ('system', system_template),
-    ('human', "{question}")
-])
+retriever = vectorstore.as_retriever()
 
-retriever = vectorstore.as_retriever(k=3)
+contextualize_q_system_prompt = """
+Dado un historial de chat y la última pregunta del usuario formula una pregunta que pueda entenderse sin el historial del chat.
+NO respondas la pregunta, simplemente reformúlala si es necesario y, en caso contrario, devuélvela tal como está.
+"""
 
-memory = ConversationBufferMemory(memory_key="chat_history")
+contextualize_q_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", contextualize_q_system_prompt),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}"),
+    ]
+)
+history_aware_retriever = create_history_aware_retriever(
+    llm, retriever, contextualize_q_prompt
+)
 
-# rag chain
-rag_chain = (
-    {'context': retriever, 'question': RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)   
+qa_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_template),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}"),
+    ]
+)
+
+
+question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+
+rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+# # rag chain
+# rag_chain = (
+#     {'context': retriever, 'question': RunnablePassthrough()}
+#     | prompt
+#     | llm
+#     | StrOutputParser()
+# )   
 
 if __name__ == '__main__':
     # Consulta para buscar documentos relevantes

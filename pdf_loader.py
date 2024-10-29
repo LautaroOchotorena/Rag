@@ -25,12 +25,13 @@ for filename in os.listdir(pdf_directory):
         # Carga el PDF utilizando PyMuPDFLoader
         loader = PyMuPDFLoader(filepath)
         documents = loader.load()
+        
+        # Para que el metadato de page comience desde 1
+        for i, doc in enumerate(documents, start=1):
+            doc.metadata["page"] = i
+
         # Agrega los documentos cargados a la lista general
         all_documents.extend(documents)
-
-# Para que el metadato de page comience desde 1
-for i, doc in enumerate(all_documents, start=1):
-    doc.metadata["page"] = i
 
 # Configura el divisor de texto para dividir los documentos en fragmentos 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
@@ -53,10 +54,20 @@ embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-Mi
                                         model_kwargs={'device': 'cpu'})
 # dimension de 384
 
-# Crea el almacén de vectores usando Chroma
-vectorstore = Chroma.from_documents(documents=splits, embedding=embedding_model,
-                                    collection_name='vectorstore',
-                                    persist_directory="./")
+target_batch_size = 5461  # max batch size para ChromaDB
+
+# Crea la colección inicialmente con una primera carga de documentos
+vectorstore = Chroma.from_documents(
+    documents=splits[:target_batch_size],  # Procesa un batch inicial dentro del límite
+    embedding=embedding_model,
+    collection_name='vectorstore',
+    persist_directory="./"
+)
+
+# añade los documentos restantes
+for i in range(target_batch_size, len(splits), target_batch_size):
+    batch = splits[i:i + target_batch_size]
+    vectorstore.add_documents(documents=batch)
 
 if __name__ == '__main__':
     print('Primeros metadatos del documento:')

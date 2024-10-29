@@ -1,8 +1,16 @@
 import gradio as gr
 from rag import *
+from langchain_core.messages import AIMessage, HumanMessage
 
-def chat(message, history):
-    response = rag_chain.invoke(f'{message}')
-    return response
+chat_history = []
+def chat(question, history):
+    response = rag_chain.invoke({'input': question, "chat_history": chat_history})
+    chat_history.extend(
+    [
+        HumanMessage(content=question),
+        AIMessage(content=response["answer"]),
+    ]
+)
+    return response['answer']
 
 gr.ChatInterface(chat, title='Chat con RAG').launch()
