@@ -1,7 +1,8 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
 import os
 import warnings
 import random
@@ -12,22 +13,23 @@ warnings.filterwarnings("ignore")
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # Define el directorio donde están tus archivos PDF
-pdf_directory = "./docs"
+md_directory = "./md/merged_files"
 
 # Crea una lista para almacenar todos los documentos cargados
 all_documents = []
 
-# Itera sobre cada archivo PDF en el directorio
-for filename in os.listdir(pdf_directory):
-    if filename.endswith(".pdf"):  # Solo procesa archivos PDF
-        filepath = os.path.join(pdf_directory, filename)
+# Itera sobre cada archivo md en el directorio
+for filename in os.listdir(md_directory):
+    if filename.endswith(".md"):  # Solo procesa archivos PDF
+        filepath = os.path.join(md_directory, filename)
         # Carga el PDF utilizando PyMuPDFLoader
-        loader = PyMuPDFLoader(filepath)
+        loader = UnstructuredMarkdownLoader(filepath)
         documents = loader.load()
         
+        ## Para pdfs
         # Para que el metadato de page comience desde 1
-        for i, doc in enumerate(documents, start=1):
-            doc.metadata["page"] = i
+        # for i, doc in enumerate(documents, start=1):
+        #     doc.metadata["page"] = i
 
         # Agrega los documentos cargados a la lista general
         all_documents.extend(documents)
@@ -55,7 +57,6 @@ for fragment in splits:
 embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
                                         model_kwargs={'device': 'cpu'})
 # dimension de 384
-
 target_batch_size = 5461  # max batch size para ChromaDB
 
 # Crea la colección inicialmente con una primera carga de documentos
@@ -72,9 +73,9 @@ for i in range(target_batch_size, len(splits), target_batch_size):
     vectorstore.add_documents(documents=batch)
 
 if __name__ == '__main__':
-    print('Primeros metadatos del documento:')
-    for i in range(3):
-        print(f'{all_documents[i]}')
+    # print('Primeros metadatos del documento:')
+    # for i in range(3):
+    #     print(f'{all_documents[i]}')
 
     print('\nPrimeros chunks:')
     for i in range(3):
@@ -83,6 +84,6 @@ if __name__ == '__main__':
         
     print('\nRandom chunks:')
     i = random.randint(400, 800)
-    for i in range(i, i+7):
+    for i in range(i, i+3):
         text = splits[i].page_content.replace('\n', ' ')
         print(f'Chunk {i+1}:\n', text)

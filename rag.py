@@ -2,7 +2,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 import config_api_key
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import (ChatPromptTemplate, MessagesPlaceholder)
 import warnings
 import os
 import torch
@@ -10,7 +10,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain.chains.conversation.base import ConversationChain
 from langchain.memory import ConversationBufferMemory
-from langchain.chains import LLMChain
+from langchain.chains import (create_history_aware_retriever, create_retrieval_chain)
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
 warnings.filterwarnings("ignore")
 
@@ -36,24 +37,7 @@ vectorstore = Chroma(
     persist_directory="."
 )
 
-system_template = '''
-Eres un asistente para tareas de respuestas a preguntas sobre estadística.
-Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
-Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
-En caso de dar ejemplos o indicar algún capítulo acompañarlo con el nombre del documento de donde se sacó la información.
-Si no sabes la respuesta simplemente menciona que no la sabes.
-Pregunta:
-{input}
-
-Contexto:
-{context}
-'''
-from langchain.chains import create_history_aware_retriever
-from langchain_core.prompts import MessagesPlaceholder
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-
-retriever = vectorstore.as_retriever()
+retriever = vectorstore.as_retriever(k=3)
 
 contextualize_q_system_prompt = """
 Dado un historial de chat y la última pregunta del usuario formula una pregunta que pueda entenderse sin el historial del chat.
@@ -67,9 +51,23 @@ contextualize_q_prompt = ChatPromptTemplate.from_messages(
         ("human", "{input}"),
     ]
 )
+# Se le pasa    
 history_aware_retriever = create_history_aware_retriever(
     llm, retriever, contextualize_q_prompt
 )
+
+system_template = '''
+Eres un asistente para tareas de respuestas a preguntas sobre estadística.
+Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
+Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
+En caso de dar ejemplos o indicar algún capítulo acompañarlo con el nombre del documento de donde se sacó la información.
+Si no sabes la respuesta simplemente menciona que no la sabes.
+Pregunta:
+{input}
+
+Contexto:
+{context}
+'''
 
 qa_prompt = ChatPromptTemplate.from_messages(
     [
@@ -79,24 +77,16 @@ qa_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-
 question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
-# # rag chain
-# rag_chain = (
-#     {'context': retriever, 'question': RunnablePassthrough()}
-#     | prompt
-#     | llm
-#     | StrOutputParser()
-# )   
-
 if __name__ == '__main__':
+    chat_history = []
     # Consulta para buscar documentos relevantes
-    query = "Explicame escalado multidimensional con fórmulas"
+    question = "Explicame escalado multidimensional con fórmulas"
 
-    result = rag_chain.invoke(query)
+    result = rag_chain.invoke({'input': question, "chat_history": chat_history})
 
-    print('Pregunta:', query)
-    print('Respuesta:', result)
+    print('Pregunta:', question)
+    print('Respuesta:', result['answer'])
