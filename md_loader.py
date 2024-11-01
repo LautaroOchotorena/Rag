@@ -23,7 +23,7 @@ for filename in os.listdir(md_directory):
     if filename.endswith(".md"):  # Solo procesa archivos PDF
         filepath = os.path.join(md_directory, filename)
         # Carga el PDF utilizando PyMuPDFLoader
-        loader = UnstructuredMarkdownLoader(filepath)
+        loader = TextLoader(filepath, encoding="utf-8")
         documents = loader.load()
         
         ## Para pdfs
@@ -73,9 +73,9 @@ for i in range(target_batch_size, len(splits), target_batch_size):
     vectorstore.add_documents(documents=batch)
 
 if __name__ == '__main__':
-    # print('Primeros metadatos del documento:')
-    # for i in range(3):
-    #     print(f'{all_documents[i]}')
+    print('Primeros metadatos del documento:')
+    for i in range(3):
+        print(f'{all_documents[i].metadata}')
 
     print('\nPrimeros chunks:')
     for i in range(3):
