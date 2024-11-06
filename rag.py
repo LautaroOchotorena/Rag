@@ -25,17 +25,17 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.1
 )
 
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
+embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
                                         model_kwargs={'device': device})
 
 # Carga del vectorstore
 vectorstore = Chroma(
     embedding_function=embedding_model,
     collection_name="vectorstore",
-    persist_directory="."
+    persist_directory="./chroma/"
 )
 
-retriever = vectorstore.as_retriever(k=3)
+retriever = vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.5, "k": 15})
 
 comprobar = False
 def procesar_contexto(context):
@@ -92,18 +92,18 @@ qa_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-# 
 question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
 if __name__ == '__main__':
     chat_history = []
+    # Para que se vea el cambio de contexto y contexto procesado
     comprobar = True
 
     # Figura 9.7: Mezcla al 50% de dos distribuciones normales con la misma media
     # y distinta varianza
-    question = "Describir la figura de los pesos de las variables de INVEST"
+    question = r"Describir la Figura 9.7"
 
     respuesta = rag_chain.invoke({"input": question, "chat_history": chat_history})
     print('Pregunta:', question)

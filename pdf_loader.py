@@ -52,7 +52,7 @@ for fragment in splits:
     fragment.page_content = preprocess_formula(fragment.page_content)
 
 # Inicializa el modelo de incrustación de HuggingFace
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
+embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/paraphrase-mpnet-base-v2',
                                         model_kwargs={'device': 'cpu'})
 # dimension de 384
 
@@ -63,7 +63,9 @@ vectorstore = Chroma.from_documents(
     documents=splits[:target_batch_size],  # Procesa un batch inicial dentro del límite
     embedding=embedding_model,
     collection_name='vectorstore',
-    persist_directory="./"
+    persist_directory="./chroma/",
+    # Sin collection_metadata dará los similarity_score_threshold negativos 
+    collection_metadata={"hnsw:space": "cosine"}
 )
 
 # añade los documentos restantes

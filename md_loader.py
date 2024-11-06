@@ -3,20 +3,27 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
+from transformers import AutoTokenizer
+import matplotlib.pyplot as plt
 import os
 import warnings
 import random
 import re
+import torch
+import heapq
 
 warnings.filterwarnings("ignore")
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print('Device utilizado:', device)
+
 # Define el directorio donde están tus archivos PDF
 md_directory = "./md/merged_files"
 
 # Crea una lista para almacenar todos los documentos cargados
-all_documents = []
+splits_all_documents = []
 
 # Itera sobre cada archivo md en el directorio
 for filename in os.listdir(md_directory):
@@ -26,17 +33,16 @@ for filename in os.listdir(md_directory):
         loader = TextLoader(filepath, encoding="utf-8")
         documents = loader.load()
         
-        ## Para pdfs
-        # Para que el metadato de page comience desde 1
-        # for i, doc in enumerate(documents, start=1):
-        #     doc.metadata["page"] = i
+        # Configura el divisor de texto para dividir los documentos en fragmentos 
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=20)
+        splits = text_splitter.split_documents(documents)
+
+        # Pongo un index para que se interprete mejor qué texto va después
+        for i, doc in enumerate(splits, start=1):
+            doc.metadata["index"] = i
 
         # Agrega los documentos cargados a la lista general
-        all_documents.extend(documents)
-
-# Configura el divisor de texto para dividir los documentos en fragmentos 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-splits = text_splitter.split_documents(all_documents)
+        splits_all_documents.extend(splits)
 
 # Función de preprocesamiento para separar referencias de ecuaciones
 def preprocess_formula(text):
@@ -45,45 +51,68 @@ def preprocess_formula(text):
     # Reemplaza las referencias de ecuaciones con un marcador
     processed_text = re.sub(equation_ref_pattern, r" [REF: \g<0>]", text)
 
-    # Cambia los caracteres "Þ" por el caracter correspondiente "fi"
-    processed_text = processed_text.replace("Þ", "fi")
     return processed_text
 
 # Aplica el preprocesamiento a cada fragmento
-for fragment in splits:
+for fragment in splits_all_documents:
     fragment.page_content = preprocess_formula(fragment.page_content)
 
 # Inicializa el modelo de incrustación de HuggingFace
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
-                                        model_kwargs={'device': 'cpu'})
-# dimension de 384
+embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
+                                        model_kwargs={'device': device})
+# dimension de 768
+tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/LaBSE')
+
+max_tokens = tokenizer.model_max_length
+print('Máximo de tokens:', tokenizer.model_max_length)
+tokens_counts = [tokenizer(sentence.page_content, padding=False, truncation=False, return_tensors='pt')['input_ids'].shape[1] for sentence in splits_all_documents]
+print('Cantidad total de tokens de los documentos:', sum(tokens_counts))
+
+max_3 = heapq.nlargest(3, set(tokens_counts))
+print('Top 3 fragmentos con más tokens:')
+for i, maximo in enumerate(max_3):
+    print(f'Fragmento {i+1}:')
+    print(splits_all_documents[tokens_counts.index(maximo)].page_content)
+
+plt.plot(tokens_counts)
+# textos truncados a partir de 512 tokens
+plt.axhline(y=max_tokens, color='r', linestyle='--', label='Max')
+plt.xlabel('Index')
+plt.ylabel('Número de tokens')
+plt.title('Tokens de cada fragmento de texto')
+plt.grid(True)
+plt.legend()
+plt.show()
+
 target_batch_size = 5461  # max batch size para ChromaDB
 
 # Crea la colección inicialmente con una primera carga de documentos
 vectorstore = Chroma.from_documents(
-    documents=splits[:target_batch_size],  # Procesa un batch inicial dentro del límite
+    documents=splits_all_documents[:target_batch_size],  # Procesa un batch inicial dentro del límite
     embedding=embedding_model,
     collection_name='vectorstore',
-    persist_directory="./"
+    persist_directory="./chroma/",
+    # Sin collection_metadata dará los similarity_score_threshold negativos 
+    collection_metadata={"hnsw:space": "cosine"}
 )
 
 # añade los documentos restantes
-for i in range(target_batch_size, len(splits), target_batch_size):
-    batch = splits[i:i + target_batch_size]
+for i in range(target_batch_size, len(splits_all_documents), target_batch_size):
+    batch = splits_all_documents[i:i + target_batch_size]
     vectorstore.add_documents(documents=batch)
 
 if __name__ == '__main__':
-    print('Primeros metadatos del documento:')
+    print('Primeros metadatos de los documentos:')
     for i in range(3):
-        print(f'{all_documents[i].metadata}')
+        print(f'{splits_all_documents[i].metadata}')
 
     print('\nPrimeros chunks:')
     for i in range(3):
-        text = splits[i].page_content.replace('\n', ' ')
+        text = splits_all_documents[i].page_content.replace('\n', ' ')
         print(f'Chunk {i+1}:\n', text)
         
     print('\nRandom chunks:')
     i = random.randint(400, 800)
     for i in range(i, i+3):
-        text = splits[i].page_content.replace('\n', ' ')
+        text = splits_all_documents[i].page_content.replace('\n', ' ')
         print(f'Chunk {i+1}:\n', text)

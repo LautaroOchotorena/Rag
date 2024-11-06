@@ -1,25 +1,28 @@
 import PyPDF2
 from langchain_community.document_loaders import PyMuPDFLoader
-# Ruta del archivo PDF original
-pdf_path = './docs/Applied Multivariate Statistical Analysis, 2nd edition - Härdle & Simar.pdf'
-# Ruta del nuevo archivo PDF
+
+# Rutas de los archivos PDF
+pdf_path = './docs/Análisis de datos multivariantes - Daniel Peña.pdf'
 new_pdf_path = './docs/prueba.pdf'
-# Número de la página que deseas extraer (empezando desde 0)
-page_number = 32  # Cambia este número según la página que necesites
+
+# Páginas de inicio y fin que deseas extraer (empiezan desde 0)
+start_page = 375  # Primera página a extraer (ajústala según necesites)
+end_page = 381   # Última página a extraer (inclusive)
 
 # Abre el archivo PDF original
 with open(pdf_path, 'rb') as pdf_file:
     reader = PyPDF2.PdfReader(pdf_file)
     writer = PyPDF2.PdfWriter()
 
-    # Extrae la página deseada
-    writer.add_page(reader.pages[page_number])
+    # Extrae cada página en el rango especificado
+    for page_number in range(start_page, end_page + 1):
+        writer.add_page(reader.pages[page_number])
 
-    # Guarda la nueva página en un nuevo archivo PDF
+    # Guarda las páginas en un nuevo archivo PDF
     with open(new_pdf_path, 'wb') as new_pdf_file:
         writer.write(new_pdf_file)
 
-print(f'La página {page_number + 1} ha sido extraída y guardada en {new_pdf_path}.')
+print(f'Las páginas desde {start_page + 1} hasta {end_page + 1} han sido extraídas y guardadas en {new_pdf_path}.')
 
 # Cargar el PDF temporal con PyMuPDFLoader
 loader = PyMuPDFLoader(new_pdf_path)
