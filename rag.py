@@ -6,6 +6,8 @@ from langchain_core.prompts import (ChatPromptTemplate, MessagesPlaceholder)
 import warnings
 import os
 import torch
+from langchain.retrievers import ContextualCompressionRetriever 
+from ragatouille import RAGPretrainedModel
 from langchain_core.runnables import RunnableLambda
 from langchain.chains import (create_history_aware_retriever, create_retrieval_chain)
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -37,7 +39,18 @@ vectorstore = Chroma(
 
 retriever = vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.3, "k": 20})
 
+RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+# Crear el compresor utilizando RAG
+compresor = RAG.as_langchain_document_compressor()
+
+# Crear el retriever con compresión contextual
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compresor,  # El compresor basado en RAG
+    base_retriever=retriever  # El retriever que hemos configurado
+)
+
 comprobar = False
+# Función para procesar las imagenes a texto descriptivo
 def procesar_contexto(context):
     global comprobar
     if comprobar:
@@ -49,22 +62,12 @@ def procesar_contexto(context):
         print('Contexto procesado:', context.page_content, '\n')
     return context
 
-from langchain.retrievers import ContextualCompressionRetriever 
-from ragatouille import RAGPretrainedModel
-
+# top <= k
+top = 7
 # Reranking
-RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
-# Crear el compresor utilizando RAG
-compresor = RAG.as_langchain_document_compressor()
-
-# Crear el retriever con compresión contextual
-compression_retriever = ContextualCompressionRetriever(
-    base_compressor=compresor,  # El compresor basado en RAG
-    base_retriever=retriever  # El retriever que hemos configurado
-)
-
 retriever_procesado = RunnableLambda(
-    lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)], key=lambda x: x.metadata['relevance_score'], reverse=True)[:3]
+    lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)],
+                         key=lambda x: x.metadata['relevance_score'], reverse=True)[:top]
 )
 
 contextualize_q_system_prompt = """
@@ -81,15 +84,15 @@ contextualize_q_prompt = ChatPromptTemplate.from_messages(
 )
 # Guarda el contexto de forma simplificada como historial
 history_aware_retriever = create_history_aware_retriever(
-    llm, retriever_final, contextualize_q_prompt
+    llm, retriever_procesado, contextualize_q_prompt
 )
 
 system_template = '''
 Eres un asistente para tareas de respuestas a preguntas sobre estadística.
 Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
 Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
-El metadato "book" indica el nombre del libro.
-Siempre acompañar la respuesta con el nombre del libro con el que se obtuvo la información.
+"book" indica el nombre del libro de cada pieza de contexto.
+Sumarle a la respuesta el nombre de el o los libros principales que se utilizaron para responder la pregunta.
 Si no sabes la respuesta simplemente menciona que no la sabes.
 Pregunta:
 {input}
