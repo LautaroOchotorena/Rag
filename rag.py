@@ -35,7 +35,7 @@ vectorstore = Chroma(
     persist_directory="./chroma/"
 )
 
-retriever = vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.5, "k": 15})
+retriever = vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.3, "k": 20})
 
 comprobar = False
 def procesar_contexto(context):
@@ -49,8 +49,22 @@ def procesar_contexto(context):
         print('Contexto procesado:', context.page_content, '\n')
     return context
 
+from langchain.retrievers import ContextualCompressionRetriever 
+from ragatouille import RAGPretrainedModel
+
+# Reranking
+RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+# Crear el compresor utilizando RAG
+compresor = RAG.as_langchain_document_compressor()
+
+# Crear el retriever con compresión contextual
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compresor,  # El compresor basado en RAG
+    base_retriever=retriever  # El retriever que hemos configurado
+)
+
 retriever_procesado = RunnableLambda(
-    lambda query: ([procesar_contexto(context) for context in retriever.invoke(query)])
+    lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)], key=lambda x: x.metadata['relevance_score'], reverse=True)[:3]
 )
 
 contextualize_q_system_prompt = """
@@ -67,15 +81,15 @@ contextualize_q_prompt = ChatPromptTemplate.from_messages(
 )
 # Guarda el contexto de forma simplificada como historial
 history_aware_retriever = create_history_aware_retriever(
-    llm, retriever_procesado, contextualize_q_prompt
+    llm, retriever_final, contextualize_q_prompt
 )
 
 system_template = '''
 Eres un asistente para tareas de respuestas a preguntas sobre estadística.
 Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
 Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
-El contexto son fragmentos de texto sacado de libros en donde el nombre del mismo se puede obtener viendo en metadata 'source'. 
-En caso de dar ejemplos o indicar algún capítulo acompañarlo con el nombre del libro de donde se sacó la información.
+El metadato "book" indica el nombre del libro.
+Siempre acompañar la respuesta con el nombre del libro con el que se obtuvo la información.
 Si no sabes la respuesta simplemente menciona que no la sabes.
 Pregunta:
 {input}
@@ -98,12 +112,16 @@ rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chai
 
 if __name__ == '__main__':
     chat_history = []
-    # Para que se vea el cambio de contexto y contexto procesado
-    comprobar = True
 
     # Figura 9.7: Mezcla al 50% de dos distribuciones normales con la misma media
     # y distinta varianza
-    question = r"Describir la Figura 9.7"
+    question = r"En qué libro y capítulo encuentro componentes principales?"
+
+    print('Contextual Compression retriever:')
+    print(compression_retriever.invoke(question)[0], '\n')
+
+    # Para que se vea el cambio de contexto y contexto procesado
+    comprobar = True
 
     respuesta = rag_chain.invoke({"input": question, "chat_history": chat_history})
     print('Pregunta:', question)

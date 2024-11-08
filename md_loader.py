@@ -29,17 +29,19 @@ splits_all_documents = []
 for filename in os.listdir(md_directory):
     if filename.endswith(".md"):  # Solo procesa archivos PDF
         filepath = os.path.join(md_directory, filename)
-        # Carga el PDF utilizando PyMuPDFLoader
         loader = TextLoader(filepath, encoding="utf-8")
         documents = loader.load()
         
         # Configura el divisor de texto para dividir los documentos en fragmentos 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=20)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         splits = text_splitter.split_documents(documents)
 
         # Pongo un index para que se interprete mejor qué texto va después
         for i, doc in enumerate(splits, start=1):
             doc.metadata["index"] = i
+            doc.metadata['book'] = filename.replace(".md","")
+            # Elimino el metadato "source" ya que es redundante con "book"
+            del doc.metadata['source']
 
         # Agrega los documentos cargados a la lista general
         splits_all_documents.extend(splits)
@@ -48,7 +50,7 @@ for filename in os.listdir(md_directory):
 def preprocess_formula(text):
     # Patrón para detectar referencias de ecuaciones, como (3.8)
     equation_ref_pattern = r"\(\d+\.\d+\)$"
-    # Reemplaza las referencias de ecuaciones con un marcador
+    # Reemplaza las referencias de ecuaciones con un marcador. Output: "[REF: 3.8]"
     processed_text = re.sub(equation_ref_pattern, r" [REF: \g<0>]", text)
 
     return processed_text
