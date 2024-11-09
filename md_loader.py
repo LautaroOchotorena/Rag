@@ -24,6 +24,12 @@ md_directory = "./md/merged_files"
 # Crea una lista para almacenar todos los documentos cargados
 splits_all_documents = []
 
+from langchain_experimental.text_splitter import SemanticChunker
+
+# Inicializa el modelo de incrustación de HuggingFace
+embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
+                                        model_kwargs={'device': device})
+
 # Itera sobre cada archivo md en el directorio
 for filename in os.listdir(md_directory):
     if filename.endswith(".md"):  # Solo procesa archivos PDF
@@ -32,7 +38,7 @@ for filename in os.listdir(md_directory):
         documents = loader.load()
         
         # Configura el divisor de texto para dividir los documentos en fragmentos 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        text_splitter = SemanticChunker(embedding_model, breakpoint_threshold_type="interquartile", breakpoint_threshold_amount=2.5)
         splits = text_splitter.split_documents(documents)
 
         # Pongo un index para que se interprete mejor qué texto va después
