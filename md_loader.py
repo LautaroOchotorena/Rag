@@ -23,23 +23,21 @@ md_directory = "./md/merged_files"
 
 # Crea una lista para almacenar todos los documentos cargados
 splits_all_documents = []
-
-from langchain_experimental.text_splitter import SemanticChunker
-
-# Inicializa el modelo de incrustación de HuggingFace
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
-                                        model_kwargs={'device': device})
-
+separators = ["."]
 # Itera sobre cada archivo md en el directorio
 for filename in os.listdir(md_directory):
     if filename.endswith(".md"):  # Solo procesa archivos PDF
         filepath = os.path.join(md_directory, filename)
         loader = TextLoader(filepath, encoding="utf-8")
         documents = loader.load()
-        
-        # Configura el divisor de texto para dividir los documentos en fragmentos 
-        text_splitter = SemanticChunker(embedding_model, breakpoint_threshold_type="interquartile", breakpoint_threshold_amount=2.5)
-        splits = text_splitter.split_documents(documents)
+
+        # Configura el divisor de texto para dividir los documentos en fragmentos
+        text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                                                            model_name="gpt-4",
+                                                            chunk_size=350,
+                                                            chunk_overlap=50,
+                                                        )
+        splits = text_splitter.split_documents(documents) 
 
         # Pongo un index para que se interprete mejor qué texto va después
         for i, doc in enumerate(splits, start=1):
@@ -81,7 +79,13 @@ for i, maximo in enumerate(max_3):
     print(f'Fragmento {i+1}:')
     print(splits_all_documents[tokens_counts.index(maximo)].page_content)
 
-plt.plot(tokens_counts)
+min_3 = heapq.nsmallest(3, set(tokens_counts))
+print("\nLos 3 fragmentos con menos tokens:")
+for i, min in enumerate(min_3):
+    print(f'Fragmento {i+1}:')
+    print(splits_all_documents[tokens_counts.index(min)].page_content)
+
+plt.plot(tokens_counts, marker='o', color='blue', linestyle='', alpha=0.3)
 # textos truncados a partir de 512 tokens
 plt.axhline(y=max_tokens, color='r', linestyle='--', label='Max')
 plt.xlabel('Index')

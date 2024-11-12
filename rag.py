@@ -91,8 +91,8 @@ system_template = '''
 Eres un asistente para tareas de respuestas a preguntas sobre estadística.
 Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
 Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
-"book" indica el nombre del libro de cada pieza de contexto.
-Sumarle a la respuesta el nombre de el o los libros principales que se utilizaron para responder la pregunta.
+Cada pieza de contexto tiene un metadato asociado en el formato metadata={{"book": nombre_del_libro}}, donde "nombre_del_libro" indica la fuente de dicha pieza de información.
+Sumarle al final de la respuesta el nombre de el o los libros principales que se utilizaron para responder la pregunta.
 Si no sabes la respuesta simplemente menciona que no la sabes.
 Pregunta:
 {input}
@@ -119,6 +119,8 @@ if __name__ == '__main__':
     # Figura 9.7: Mezcla al 50% de dos distribuciones normales con la misma media
     # y distinta varianza
     question = r"En qué libro y capítulo encuentro componentes principales?"
+
+    print(history_aware_retriever.invoke({"input": question, "chat_history": chat_history}))
 
     print('Contextual Compression retriever:')
     print(compression_retriever.invoke(question)[0], '\n')
