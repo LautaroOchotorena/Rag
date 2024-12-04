@@ -19,7 +19,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device utilizado:', device)
 
 # Define el directorio donde están tus archivos PDF
-md_directory = "./md/merged_files"
+md_directory = "./prueba"
 
 # Crea una lista para almacenar todos los documentos cargados
 splits_all_documents = []
@@ -34,7 +34,7 @@ for filename in os.listdir(md_directory):
         # Configura el divisor de texto para dividir los documentos en fragmentos
         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                                                             model_name="gpt-4",
-                                                            chunk_size=350,
+                                                            chunk_size=500,
                                                             chunk_overlap=50,
                                                         )
         splits = text_splitter.split_documents(documents) 
@@ -63,13 +63,14 @@ for fragment in splits_all_documents:
     fragment.page_content = preprocess_formula(fragment.page_content)
 
 # Inicializa el modelo de incrustación de HuggingFace
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
+embedding_model = HuggingFaceEmbeddings(model_name='thenlper/gte-large',
                                         model_kwargs={'device': device})
 # dimension de 768
-tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/LaBSE')
+tokenizer = AutoTokenizer.from_pretrained('thenlper/gte-large')
 
-max_tokens = tokenizer.model_max_length
-print('Máximo de tokens:', tokenizer.model_max_length)
+max_tokens = 512
+# max_tokens = tokenizer.model_max_length
+print('Máximo de tokens:', max_tokens)
 tokens_counts = [tokenizer(sentence.page_content, padding=False, truncation=False, return_tensors='pt')['input_ids'].shape[1] for sentence in splits_all_documents]
 print('Cantidad total de tokens de los documentos:', sum(tokens_counts))
 

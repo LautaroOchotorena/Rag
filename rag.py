@@ -27,7 +27,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.1
 )
 
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
+embedding_model = HuggingFaceEmbeddings(model_name='thenlper/gte-large',
                                         model_kwargs={'device': device})
 
 # Carga del vectorstore
@@ -98,7 +98,7 @@ Pregunta:
 {input}
 
 Contexto:
-{context}
+{context.page_content}
 '''
 
 qa_prompt = ChatPromptTemplate.from_messages(
