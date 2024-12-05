@@ -37,7 +37,7 @@ vectorstore = Chroma(
     persist_directory="./chroma/"
 )
 
-retriever = vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.3, "k": 20})
+retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"score_threshold": 0.3, "k": 20, "include_metadata": True})
 
 RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
 # Crear el compresor utilizando RAG
@@ -98,7 +98,7 @@ Pregunta:
 {input}
 
 Contexto:
-{context.page_content}
+{context}
 '''
 
 qa_prompt = ChatPromptTemplate.from_messages(

@@ -34,8 +34,8 @@ for filename in os.listdir(md_directory):
         # Configura el divisor de texto para dividir los documentos en fragmentos
         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                                                             model_name="gpt-4",
-                                                            chunk_size=500,
-                                                            chunk_overlap=50,
+                                                            chunk_size=1000,
+                                                            chunk_overlap=100,
                                                         )
         splits = text_splitter.split_documents(documents) 
 
@@ -63,13 +63,14 @@ for fragment in splits_all_documents:
     fragment.page_content = preprocess_formula(fragment.page_content)
 
 # Inicializa el modelo de incrustación de HuggingFace
-embedding_model = HuggingFaceEmbeddings(model_name='thenlper/gte-large',
-                                        model_kwargs={'device': device})
+embedding_model = HuggingFaceEmbeddings(model_name='dunzhang/stella_en_400M_v5',
+                                        model_kwargs={'trust_remote_code':True,
+                                                      'device': device})
 # dimension de 768
-tokenizer = AutoTokenizer.from_pretrained('thenlper/gte-large')
+tokenizer = AutoTokenizer.from_pretrained('dunzhang/stella_en_400M_v5', trust_remote_code=True)
 
 max_tokens = 512
-# max_tokens = tokenizer.model_max_length
+max_tokens = tokenizer.model_max_length
 print('Máximo de tokens:', max_tokens)
 tokens_counts = [tokenizer(sentence.page_content, padding=False, truncation=False, return_tensors='pt')['input_ids'].shape[1] for sentence in splits_all_documents]
 print('Cantidad total de tokens de los documentos:', sum(tokens_counts))
