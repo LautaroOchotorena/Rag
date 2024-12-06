@@ -12,6 +12,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain.chains import (create_history_aware_retriever, create_retrieval_chain)
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from describir_imagenes import process_context_with_images
+from langchain_google_vertexai import VertexAIEmbeddings
 
 warnings.filterwarnings("ignore")
 
@@ -27,8 +28,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.1
 )
 
-embedding_model = HuggingFaceEmbeddings(model_name='thenlper/gte-large',
-                                        model_kwargs={'device': device})
+embedding_model = VertexAIEmbeddings(model="textembedding-gecko@003")
 
 # Carga del vectorstore
 vectorstore = Chroma(
@@ -37,17 +37,17 @@ vectorstore = Chroma(
     persist_directory="./chroma/"
 )
 
-retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"score_threshold": 0.3, "k": 20, "include_metadata": True})
+retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"score_threshold": 0.3, "k": 10, "include_metadata": True})
 
-RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
-# Crear el compresor utilizando RAG
-compresor = RAG.as_langchain_document_compressor()
+# RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+# # Crear el compresor utilizando RAG
+# compresor = RAG.as_langchain_document_compressor()
 
-# Crear el retriever con compresión contextual
-compression_retriever = ContextualCompressionRetriever(
-    base_compressor=compresor,  # El compresor basado en RAG
-    base_retriever=retriever  # El retriever que hemos configurado
-)
+# # Crear el retriever con compresión contextual
+# compression_retriever = ContextualCompressionRetriever(
+#     base_compressor=compresor,  # El compresor basado en RAG
+#     base_retriever=retriever  # El retriever que hemos configurado
+# )
 
 comprobar = False
 # Función para procesar las imagenes a texto descriptivo
@@ -61,14 +61,15 @@ def procesar_contexto(context):
     if comprobar:
         print('Contexto procesado:', context.page_content, '\n')
     return context
-
-# top <= k
-top = 7
-# Reranking
+describir_imagenes = True
 retriever_procesado = RunnableLambda(
-    lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)],
-                         key=lambda x: x.metadata['relevance_score'], reverse=True)[:top]
-)
+    lambda query: [procesar_contexto(context) if describir_imagenes else context for context in retriever.invoke(query)])
+# top = 7
+# # Reranking
+# retriever_procesado = RunnableLambda(
+#     lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)],
+#                          key=lambda x: x.metadata['relevance_score'], reverse=True)[:top]
+# )
 
 contextualize_q_system_prompt = """
 Dado un historial de chat y la última pregunta del usuario formula una pregunta que pueda entenderse sin el historial del chat.
@@ -122,8 +123,8 @@ if __name__ == '__main__':
 
     print(history_aware_retriever.invoke({"input": question, "chat_history": chat_history}))
 
-    print('Contextual Compression retriever:')
-    print(compression_retriever.invoke(question)[0], '\n')
+    print('Contextual retriever:')
+    print(retriever_procesado.invoke(question)[0], '\n')
 
     # Para que se vea el cambio de contexto y contexto procesado
     comprobar = True
