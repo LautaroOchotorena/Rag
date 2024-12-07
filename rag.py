@@ -61,59 +61,75 @@ def procesar_contexto(context):
     if comprobar:
         print('Contexto procesado:', context.page_content, '\n')
     return context
-describir_imagenes = True
-retriever_procesado = RunnableLambda(
-    lambda query: [procesar_contexto(context) if describir_imagenes else context for context in retriever.invoke(query)])
-# top = 7
-# # Reranking
-# retriever_procesado = RunnableLambda(
-#     lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)],
-#                          key=lambda x: x.metadata['relevance_score'], reverse=True)[:top]
-# )
 
-contextualize_q_system_prompt = """
-Dado un historial de chat y la última pregunta del usuario formula una pregunta que pueda entenderse sin el historial del chat.
-NO respondas la pregunta, simplemente reformúlala si es necesario y, en caso contrario, devuélvela tal como está.
-"""
+def format_context_with_metadata(documents):
+    """
+    Formatea los documentos recuperados para incluir metadatos en el contexto.
+    """
+    for doc in documents:
+        doc.page_content = f"{doc.page_content}\nmetadata={{'book': '{doc.metadata.get('book', 'desconocido')}', 'index':{doc.metadata.get('index', 'desconocido')}}}"
+    return documents
 
-contextualize_q_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", contextualize_q_system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-# Guarda el contexto de forma simplificada como historial
-history_aware_retriever = create_history_aware_retriever(
-    llm, retriever_procesado, contextualize_q_prompt
-)
+class rag():
+    def __init__(self, describir_imagenes):
+        self.describir_imagenes = describir_imagenes
+        self.retriever_procesado = RunnableLambda(
+            lambda query: format_context_with_metadata([procesar_contexto(context) if
+                                                        self.describir_imagenes else context
+                                                        for context in retriever.invoke(query)])
+                                                        )
+        # top = 7
+        # # Reranking
+        # retriever_procesado = RunnableLambda(
+        #     lambda query: sorted([procesar_contexto(context) for context in compression_retriever.invoke(query)],
+        #                          key=lambda x: x.metadata['relevance_score'], reverse=True)[:top]
+        # )
 
-system_template = '''
-Eres un asistente para tareas de respuestas a preguntas sobre estadística.
-Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
-Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
-Cada pieza de contexto tiene un metadato asociado en el formato metadata={{"book": nombre_del_libro}}, donde "nombre_del_libro" indica el libro de dicha pieza de información.
-Al final de la respuesta incluye el nombre de el o los libros principales que se utilizaron para responder la pregunta.
-Si no sabes la respuesta simplemente menciona que no la sabes.
-Pregunta:
-{input}
+        contextualize_q_system_prompt = """
+        Dado un historial de chat y la última pregunta del usuario formula una pregunta que pueda entenderse sin el historial del chat.
+        NO respondas la pregunta, simplemente reformúlala si es necesario y, en caso contrario, devuélvela tal como está.
+        """
 
-Contexto:
-{context}
-'''
+        contextualize_q_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", contextualize_q_system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+        # Guarda el contexto de forma simplificada como historial
+        self.history_aware_retriever = create_history_aware_retriever(
+            llm, self.retriever_procesado, contextualize_q_prompt
+        )
 
-qa_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_template),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
+        system_template = '''
+        Eres un asistente para tareas de respuestas a preguntas sobre estadística.
+        Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
+        Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
+        Cada pieza de contexto tiene un metadato asociado en el formato metadata={{"book": nombre_del_libro}}, donde "nombre_del_libro" indica el libro de dicha pieza de información.
+        El metadato "index" ayuda a indicar la continuidad del contexto en un mismo libro.
+        Al final de la respuesta incluye el nombre de el o los libros principales que se utilizaron para responder la pregunta.
+        Si no sabes la respuesta simplemente menciona que no la sabes.
+        Pregunta:
+        {input}
 
-question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+        Contexto:
+        {context}
+        '''
 
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+        qa_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_template),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
 
+        self.question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+
+        self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
+
+rag_estadistica = rag(describir_imagenes = True)
 if __name__ == '__main__':
     chat_history = []
 
@@ -121,14 +137,14 @@ if __name__ == '__main__':
     # y distinta varianza
     question = r"En qué libro y capítulo encuentro componentes principales?"
 
-    print(history_aware_retriever.invoke({"input": question, "chat_history": chat_history}))
+    print(rag_estadistica.history_aware_retriever.invoke({"input": question, "chat_history": chat_history}))
 
     print('Contextual retriever:')
-    print(retriever_procesado.invoke(question)[0], '\n')
+    print(rag_estadistica.retriever_procesado.invoke(question)[0], '\n')
 
     # Para que se vea el cambio de contexto y contexto procesado
     comprobar = True
 
-    respuesta = rag_chain.invoke({"input": question, "chat_history": chat_history})
+    respuesta = rag_estadistica.rag_chain.invoke({"input": question, "chat_history": chat_history})
     print('Pregunta:', question)
     print('Respuesta:', respuesta['answer'])
