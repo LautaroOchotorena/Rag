@@ -1,7 +1,6 @@
 import re
 import config_api_key
 from langchain_google_genai import ChatGoogleGenerativeAI
-import ast
 import random
 
 # Función para detectar segmentos LaTeX en un archivo .md
@@ -26,37 +25,57 @@ llm = ChatGoogleGenerativeAI(
 def compact_latex(latex_text):
     try:
         # Solicitar al modelo de lenguaje GPT-4 mini que compacte el LaTeX
-        prompt = r"""Compacta en texto plano la siguiente lista de expresiones
-        matemáticas en LaTeX. Las expresiones están enumeradas.
-        Aunque cada línea dentro de la expresión defina un cálculo diferente ponlo todo en la compactación.
-        Si dos expresiones parecen conectarse considerarlas como separadas.
-        Si una expresión tiene "\\\\" no considerar como dos o más expresiones.
-        Al final de cada compactación pon '<end>' obligatoriamente salvo en el último elemento.
-        Ejemplo: 
-        Si la lista es
-        "
-        1) d_1,\\ldots,d_(i-1)
-        2) d_(i+1),\\ldots,d_p
-        "
-        Se tiene que devolver "d₁, …, dᵢ₋₁<end>dᵢ₊₁, …, dₚ"
+        prompt = r"""Compact into plain text the following list of mathematical expressions in LaTeX.
+        The expressions are delimited by "i) expression<end>" where i is a number.
+        Even if each line within the expression defines a different calculation, include everything in the same compacted form.
+        If two or more expressions seem connected, treat them as separate.
+        If an expression contains "\\", do not consider it as two or more expressions.
+        At the end of each compacted form, always include <end> except for the last element.
+        If there's text involded keep it as it is.
 
-        Otro ejemplo:
-        Si la lista es
-        "
-        1) \\begin{aligned}\nE(Y_{0i})&=40 \\\\\n&=60-20\\end{aligned}\\\\\n&=20*2
-        2) 40=20+20
-        "
-        Se tiene que devolver "E(Y₀ᵢ)&=40\n&=60-20\n&=20*2<end>40=20+20"
+        Example:
+        If the list is
+        "1) d_1,\\ldots,d_(i-1)<end>2) d_(i+1),\\ldots,d_p<end>"
+        The result should be:
+        "d₁, …, dᵢ₋₁<end>dᵢ₊₁, …, dₚ"
 
-        Importante: el número de expresiones tiene que coincidir con el número de compactaciones.
-        Ejemplo: si se pasaron 5 expresiones se tienen que devolver 5 compactaciones.
+        Important: The number of compacted expressions must match the number of input expressions.
+        For example, if 5 expressions are provided, 5 compacted forms must be returned.
         """
         # Otro ejemplo:
-        # Si la lista es ['\\begin{aligned}\n&s_{11} =\\frac{1}{4}\\sum_{j=1}^{4}\\left(x_{j1}-\\overline{x}_{1}\\right)^{2}  \\\\\n&=\\frac{1}{4}((42-50)^{2}+(52-50)^{2}+(48-50)^{2}+(58-50)^{2})=34']
-        # Devolver el string 's₁₁ = ¼Σ⁴ⱼ₌₁ (xⱼ₁ - x̄₁)² = ¼((42-50)²+(52-50)²+(48-50)²+(58-50)²) = 34'
+        # If the list is
+        # "
+        # 1) \\begin{aligned}\nE(Y_{0i})&=40 \\\\\n&=60-20\\end{aligned}\\\\\n&=20*2
+        # 2) 40=20+20
+        # "
+        # The result should be: "E(Y₀ᵢ)&=40\n&=60-20\n&=20*2<end>40=20+20"
         prompt = prompt + f"""
 
-        Lista a compactar: {latex_text}"""
+        List to compact: {latex_text}"""
+
+        # Usar el modelo para generar la respuesta
+        response = llm.invoke(prompt)
+        response_content = dict(response)['content']
+        return response_content
+    except Exception as e:
+        print(f"Error al procesar LaTeX: {e}")
+        return latex_text
+def compact_latex_unit(latex_text):
+    try:
+        # Solicitar al modelo de lenguaje GPT-4 mini que compacte el LaTeX
+        prompt = r"""Compact the following mathematical expression in LaTeX into plain text.
+        At the end of the compacted form, include "<end>".
+        If there's text involded keep it as it is.
+
+        Example:
+        If the input is:
+        "1) d_1,\\ldots,d_(i-1),d_(i+1),\\ldots,d_p<end>"
+        The result should be:
+        "d₁, …, dᵢ₋₁,dᵢ₊₁, …, dₚ<end>"
+        """
+        prompt = prompt + f"""
+
+        List to compact: {latex_text}"""
 
         # Usar el modelo para generar la respuesta
         response = llm.invoke(prompt)
@@ -70,7 +89,10 @@ def compact_latex(latex_text):
 def compact_table(tables):
     try:
         # Solicitar al modelo de lenguaje GPT-4 mini que compacte el LaTeX
-        prompt = f"Compacta en texto plano las siguientes tablas usando |, en caso de tener header mantener los nombres: {tables}. Sólo respondé con la compactación directa. Al final de cada compactación pon '<end>'"
+        prompt = f"""Compact the following tables into plain text using '|'.
+        If there is a header, keep the column names: {tables}.
+        Only respond with the direct compacted form.
+        At the end of each compacted table, include '<end>''."""
 
         # Usar el modelo para generar la respuesta
         response = llm.invoke(prompt)
@@ -146,21 +168,20 @@ def process_md_file(md_file_path, output_file_path):
         else:
             mantener = latex
         
-        resultado = "".join([f"{i + 1}) {item}\n" if i != len(latex_segments) - 1 else f"{i + 1}) {item}" for i, item in enumerate(lista_latex)])
+        resultado = "".join([f"{i + 1}) {item}<end>" for i, item in enumerate(lista_latex)])
         compacted = compact_latex(resultado)
         lista_compactada = compacted.rstrip('\n').split("<end>")
         if len(lista_latex) < len(lista_compactada):
-            print('TENGO MENOS\n')
-            print('lista:',lista_latex)
-            print('\n\nLista compactada:', lista_compactada, '\n\n\n\n\n\n')
             if lista_compactada[-1] == '':
                 lista_compactada.pop() # Elimina el último elemento
-        if len(lista_latex) > len(lista_compactada):
-            print('TENGO MAS\n')
+        if len(lista_latex) < len(lista_compactada) or len(lista_latex) > len(lista_compactada):
+            lista_compactada = []
+            for i in range(len(lista_latex)):
+                lista_compactada.append(compact_latex_unit(f"{lista_latex[i]}").rstrip('\n').split('<end>')[0])
             print('lista:',lista_latex)
             print('\n\nLista compactada:', lista_compactada, '\n\n\n\n\n\n')
         # Asegurar que cada compactación se hizo
-        if len(lista_latex) <= len(lista_compactada):
+        if len(lista_latex) == len(lista_compactada):
             for i in range(len(lista_latex)):
                 content = content.replace(f"$${lista_latex[i]}$$", f"{lista_compactada[i]}").replace(f"${lista_latex[i]}$", f"{lista_compactada[i]}").replace("ï¼Œ", ",")
         if mantener == '':

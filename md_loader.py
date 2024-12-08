@@ -53,8 +53,8 @@ for filename in os.listdir(md_directory):
 
 # Función de preprocesamiento para separar referencias de ecuaciones
 def preprocess_formula(text):
-    # Patrón para detectar referencias de ecuaciones, como (3.8)
-    equation_ref_pattern = r"\(\d+\.\d+\)$"
+    # Patrón para detectar referencias de ecuaciones, como (3.8) o (3-8)
+    equation_ref_pattern = r"\((\d+\.\d+|\d+-\d+)\)$"
     # Reemplaza las referencias de ecuaciones con un marcador. Output: "[REF: 3.8]"
     processed_text = re.sub(equation_ref_pattern, r" [REF: \g<0>]", text)
 
