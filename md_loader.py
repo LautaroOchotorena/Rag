@@ -123,9 +123,12 @@ if __name__ == '__main__':
     for i in range(3):
         text = splits_all_documents[i].page_content.replace('\n', ' ')
         print(f'Chunk {i+1}:\n', text)
-        
-    print('\nRandom chunks:')
-    i = random.randint(400, 800)
-    for i in range(i, i+3):
-        text = splits_all_documents[i].page_content.replace('\n', ' ')
-        print(f'Chunk {i+1}:\n', text)
+    
+    try:
+        print('\nRandom chunks:')
+        i = random.randint(400, 800)
+        for i in range(i, i+3):
+            text = splits_all_documents[i].page_content.replace('\n', ' ')
+            print(f'Chunk {i+1}:\n', text)
+    except IndexError:
+        print('Error al seleccionar fragmentos aleatorios:', IndexError)
