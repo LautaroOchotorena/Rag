@@ -1,6 +1,7 @@
 import gradio as gr
 from langchain_core.messages import (AIMessage, HumanMessage)
 from rag import *
+import time 
 
 # Gestión de chats
 chats = {'Chat 1':[]}
@@ -52,7 +53,12 @@ def save_chat_to_file():
                 f.write(f"Usuario: {user_message}\n")
                 f.write(f"Bot: {bot_message}\n")
             f.write("\n")  # Separar chats
+
     return "Chats guardados en 'chat_history.txt'"
+
+def return_original_message():   # Esperar 3 segundos antes de restaurar el texto original
+    time.sleep(3)
+    return "Guardar chats en local"
 
 # Función para cargar los chats desde un archivo de texto
 def load_chat_history(file):
@@ -149,6 +155,7 @@ with gr.Blocks(fill_height=True) as demo:
 
     # Guarda el historial de chat en local
     save_button.click(save_chat_to_file, outputs=save_button)
+    save_button.click(return_original_message, outputs=save_button)
 
     # Permite mandarle el input a la llm y limpia el valor una vez mandado
     input_box.submit(chat, inputs=input_box, outputs=chatbot)
