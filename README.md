@@ -17,22 +17,22 @@ This project aims to create a chatbot based on mathematical documents where you 
 	"PROJECT_ID": "Project ID Google AI Studio"
 }
 ```
-    For this project I used Gemini for the LLM and VertexAIEmbeddings for the vectorstore.
-    To obtain the keys: Create a Google Cloud project, then generate the [Google API KEY](https://aistudio.google.com/app/apikey) and [enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
+   For this project I used Gemini for the LLM and VertexAIEmbeddings for the vectorstore.
+   To obtain the keys: Create a Google Cloud project, then generate the [Google API KEY](https://aistudio.google.com/app/apikey) and [enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
 
-    Don't forget to replace the values in the json file.
+   Don't forget to replace the values in the json file.
 
 3. Using Conda or Miniconda:
 ```bash
     conda env create -f environment.yml python=3.11.10
 ```
-    This will install the environment and the dependencies needed.
+   This will install the environment and the dependencies needed.
 
-    Activate it
-    ```bash
-        conda activate rag
-    ```
-    and follow the [instructions](https://pytorch.org/get-started/locally/) to use **CUDA** if you have a GPU or **NO CUDA** if you want to run everything on CPU.
+   Activate it
+```bash
+    conda activate rag
+```
+   and follow the [instructions](https://pytorch.org/get-started/locally/) to use **CUDA** if you have a GPU or **NO CUDA** if you want to run everything on CPU.
 
 4. Acces to [SimpleTex](https://simpletex.net/) and use the Online OCR where you need to pass all the documents (one by one) in order to convert them into a markdown file with latex notation. Export them with the images, this will download a folder with the md and a folder with the images.
 It can't process more than 500 pages per documents so if you have more than that you can use the [dividir_pdf.py](https://github.com/LautaroOchotorena/Rag/blob/master/dividir_pdf.py) to divide each documents into pieces of at least 500 pages.
@@ -48,7 +48,7 @@ If this happens you can use [create_pdf.py](https://github.com/LautaroOchotorena
 8. Create the vectorstore using [md_loader.py](https://github.com/LautaroOchotorena/Rag/blob/master/md_loader.py). It will be stored locally.
 
 9. Ready to launch the app:
-    ```bash
-        python app.py
-    ```
-    It will run locally.
+```bash
+    python app.py
+```
+   It will run locally.
