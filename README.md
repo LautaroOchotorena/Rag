@@ -1,18 +1,15 @@
 # RAG for mathematical documents
 This project aims to create a chatbot based on mathematical documents where you can interact with and ask about exercises, information about a topic, examples, other authors that the documents cite, etc.
 
-The documents has to be in english otherwise it will be needed to change the embedding model to a multilingual one.
+The documents have to be in english otherwise it will be needed to change the embedding model to a multilingual one.
 
-
-- Project folder/
+- Rag folder/
   - docs/
-    - doc1.pdf
-    - doc2.pdf
+    - divided_pdfs/
   - md/
     - merged_files/
-      - md1.md
       - images/
-        - image1.png 
+  - prueba/
 
 # Results obtained
 
@@ -71,10 +68,10 @@ The usage of the **step 7** makes a lot of difference. <br>
 For example:
 <div align="center">
 
-| <h3>Document</h3> | <h3>Number of tokens</h3>  | <h3>Number of characters</h3>
+| <h4>Document</h4> | <h4>Number of tokens</h4>  | <h4>Number of characters</h4>
 |-----------------------|--------------------|--------------------|
-| <h3>**Original**</h3>   | <h3>358,374</h3>  | <h3>976,153</h3>
-| <h3>**Compacted version**</h3>| <h3>227,832</h3> | <h3>658,651</h3>
+| <h4>**Original**</h4>   | <h4>358,374</h4>  | <h4>976,153</h4>
+| <h4>**Compacted version**</h4>| <h4>227,832</h4> | <h4>658,651</h4>
 
 </div>
 
