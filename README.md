@@ -67,19 +67,19 @@ If this happens you can use [create_pdf.py](https://github.com/LautaroOchotorena
 It will run locally.
 
 ## Reduction of characters
-The usage of the **step 7** makes a lot of difference.
-For example: I have a document with
+The usage of the **step 7** makes a lot of difference. <br>
+For example:
 <div align="center">
-| Metric      |  Quantity  |
-|--------------|------------|
-| **Tokens**   | 358,374    |
-| **Characters** | 976,153    |
+
+| <h3>Document</h3> | <h3>Number of tokens</h3>  | <h3>Number of characters</h3>
+|-----------------------|--------------------|--------------------|
+| <h3>**Original**</h3>   | <h3>358,374</h3>  | <h3>976,153</h3>
+| <h3>**Compacted version**</h3>| <h3>227,832</h3> | <h3>658,651</h3>
+
 </div>
-and the compacted version
-<div align="center">
-| Metric      |  Quantity  |
-|--------------|------------|
-| **Tokens**   | 227,832    |
-| **Characters** | 658,651    |
-</div>
-That implies a reduction of 32.5%
+
+That implies a reduction of **32.5%** for the number of characters.
+
+This helps with the embedding model that has a limit of tokens per chunk.
+
+Now you can store more data into a chunk.
