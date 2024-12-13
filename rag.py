@@ -103,7 +103,7 @@ class rag():
         )
 
         system_template = '''
-        Eres un asistente para tareas de respuestas a preguntas sobre estadística.
+        Eres un asistente para tareas de respuestas a preguntas sobre matemática.
         Utiliza las siguientes piezas de contexto recuperado para responder la pregunta.
         Ten en cuenta que pueden haber tablas y fórmulas matemáticas en el contexto.
         Cada pieza de contexto tiene un metadato asociado en el formato metadata={{"book": nombre_del_libro}}, donde "nombre_del_libro" indica el libro de dicha pieza de información.
