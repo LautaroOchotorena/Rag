@@ -11,6 +11,8 @@ The documents Vhave to be in english otherwise it will be needed to change the e
 
 # Results obtained
 
+
+
 # How to run it
 
 Keep in mind the structure of the folders
@@ -43,7 +45,7 @@ Don't forget to replace the values in the json file.
 
 **3.** Using Conda or Miniconda:
 ```bash
-    conda env create -f environment.yml python=3.11.10
+    conda env create -f environment.yaml
 ```
 This will install the environment and the dependencies needed.
 

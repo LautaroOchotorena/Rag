@@ -2,6 +2,7 @@ name: rag
 channels:
   - defaults
 dependencies:
+  - python=3.11.10
   - bzip2=1.0.8=h2bbff1b_6
   - ca-certificates=2024.9.24=haa95532_0
   - libffi=3.4.4=hd77b12b_1
