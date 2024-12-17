@@ -21,7 +21,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device utilizado:', device)
 
 # Define el directorio donde están tus archivos PDF
-md_directory = "./prueba"
+md_directory = "./final_md"
 
 # Crea una lista para almacenar todos los documentos cargados
 splits_all_documents = []

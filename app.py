@@ -6,7 +6,7 @@ import time
 # Gestión de chats
 chats = {'Chat 1':[]}
 current_chat_id = 'Chat 1'
-rag_estadistica = rag(describir_imagenes=False)
+rag_estadistica = rag(describe_imagenes=False)
 
 # Función para convertir historial al formato esperado
 def format_chat_history(chat_history):
@@ -111,9 +111,9 @@ def load_chat_history(file):
 def checkbox_action(checked):
     global rag_estadistica
     if checked:
-        rag_estadistica = rag(describir_imagenes=True)
+        rag_estadistica = rag(describe_imagenes=True)
     else:
-        rag_estadistica = rag(describir_imagenes=False)
+        rag_estadistica = rag(describe_imagenes=False)
     return chats[current_chat_id]
 
 def delete_history_chats():

@@ -2,6 +2,7 @@ import re
 import config_api_key
 from langchain_google_genai import ChatGoogleGenerativeAI
 import random
+import os
 
 # Función para detectar segmentos LaTeX en un archivo .md
 def extract_latex_segments(md_file_path,content):
@@ -197,11 +198,10 @@ def process_md_file(md_file_path, output_file_path):
     with open(output_file_path, 'w', encoding='utf-8') as file:
         file.write(content)
 
+md_directory = './md/merged_files'
 # Ruta al archivo markdown de entrada y salida
-md_file_path = 'probando.md'
-output_file_path = 'archivo_salida.md'
-
-# Procesa el archivo
-process_md_file(md_file_path, output_file_path)
-
-print("Archivo procesado con éxito.")
+for filename in os.listdir(md_directory):
+    if filename.endswith(".md"):
+        # Process the file
+        process_md_file(md_directory + "/" + filename, f"final_md/{filename}")
+        print(f"File {filename} processed successfully")
