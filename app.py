@@ -3,165 +3,173 @@ from langchain_core.messages import (AIMessage, HumanMessage)
 from rag import *
 import time 
 
-# Gestión de chats
 chats = {'Chat 1':[]}
 current_chat_id = 'Chat 1'
-rag_estadistica = rag(describe_imagenes=False)
 
-# Función para convertir historial al formato esperado
+rag_maths = rag(describe_imagenes=False)
+
+# Convert the chats into a history format
 def format_chat_history(chat_history):
     formatted_history = []
     for user_message, bot_message in chat_history:
-        if user_message:  # Mensaje del usuario
+        # User message
+        if user_message:
             formatted_history.append(HumanMessage(content=user_message))
-        if bot_message:  # Respuesta del bot
+        # Bot message
+        if bot_message:
             formatted_history.append(AIMessage(content=bot_message))
     return formatted_history
 
-# Función principal de chat
+# Main chat
 def chat(question):
-    global rag_estadistica
-    # Formatea el historial antes de pasarlo a LangChain
+    global rag_maths
+    # Format the history to pass it to the rag
     formatted_history = format_chat_history(chats[current_chat_id])
-    response = rag_estadistica.rag_chain.invoke({
+    response = rag_maths.rag_chain.invoke({
         "input": question,
         "chat_history": formatted_history
     })
+    # Add the response and the question to the history
     chats[current_chat_id].append((question, response['answer']))
     return chats[current_chat_id]
 
-# Crear un nuevo chat
+# Create a new chat
 def start_new_chat():
     global current_chat_id
     chat_id = f"Chat {len(chats) + 1}"
-    chats[chat_id] = []  # Crear un nuevo historial vacío
+    chats[chat_id] = []  # Create new chat empty
     current_chat_id = chat_id
     return gr.update(choices=list(chats.keys()), value=chat_id), chats[chat_id]
 
-# Seleccionar un chat existente y mostrar su historial
+# Select an existing chat and display its history
 def select_chat(chat_id):
     global current_chat_id
     current_chat_id = chat_id
     return chats[chat_id]
 
-# Función para guardar todos los chats en un archivo de texto
+# Save the chats in a text file
 def save_chat_to_file():
     with open("chat_history.txt", "w", encoding="utf-8") as f:
         for chat_id, history in chats.items():
             f.write(f"Chat ID: {chat_id}\n")
             for user_message, bot_message in history:
-                f.write(f"Usuario: {user_message}\n")
+                f.write(f"User: {user_message}\n")
                 f.write(f"Bot: {bot_message}\n")
-            f.write("\n")  # Separar chats
+            f.write("\n")  # Separate chats
 
-    return "Chats guardados en 'chat_history.txt'"
+    return "Chats saved in 'chat_history.txt'"
 
-def return_original_message():   # Esperar 3 segundos antes de restaurar el texto original
-    time.sleep(3)
-    return "Guardar chats en local"
+# Return the original text of the save chat button
+def return_original_message():
+    time.sleep(3) # Wait 3 seconds to change the text
+    return "Save chats locally"
 
-# Función para cargar los chats desde un archivo de texto
+# Load chat history from a file text
 def load_chat_history(file):
     global chats
     global chat_list
     global current_chat_id
-    # Leer el contenido del archivo cargado
+    # Read the file name
     content = file.name
+    # Open the file content
     with open(content, 'r', encoding='utf-8') as f:
         chat_id = None
-        current_chat = []
-         # Limpiar los chats anteriores
+        # Empty the previous chats
         chats = {}
+        # Read each line
         for line in f:
-            line = line.strip()
-            
             if line.startswith("Chat ID:"):
-                # Nuevo chat, se guarda el anterior si existe
+                # When it finds a new chat ID it saves the previous chat ID conversation
                 if chat_id is not None:
                     chats[chat_id] = current_chat
-                chat_id = line.replace("Chat ID: ", "").strip()
+                chat_id = line.replace("Chat ID: ", "")
+                # Current chat it will store tuples of (question, bot_answer)
                 current_chat = []
             
-            elif line.startswith("Usuario:"):
-                # Nuevo mensaje del usuario
-                current_chat.append((line[9:].strip(), None))
+            elif line.startswith("User:"):
+                # Append the line to the current chat
+                current_chat.append((line[6:], None))
             
             elif line.startswith("Bot:"):
-                # Nueva respuesta del bot
                 if current_chat and current_chat[-1][1] is None:
-                    current_chat[-1] = (current_chat[-1][0], line[5:].strip())
+                    current_chat[-1] = (current_chat[-1][0], line[5:])
                 else:
-                    # En caso de que no haya un usuario antes, lo ignoramos o manejamos el error
+                    # If there is no previous user, ignore it
                     pass
-            
+
             else:
-                # Texto adicional (parte de la respuesta del bot)
+                # Additional text for the bot answer
                 if current_chat and current_chat[-1][1] is not None:
-                    # Concatenar líneas adicionales a la última respuesta del bot
+                    # Concatenate additional lines to the bot's last response
                     current_chat[-1] = (current_chat[-1][0], current_chat[-1][1] + "\n" + line)
-        # Guardamos el último chat
+        
+        # Save the last Chat ID conversation
         if chat_id:
             chats[chat_id] = current_chat
         
         current_chat_id = chat_id
-        # Actualizar la lista de chats en el Dropdown
-        return gr.update(choices=list(chats.keys()), value=list(chats.keys())[0]), chats[current_chat_id]
+        # Refresh the dropdown list of chats and show the last chat
+        return gr.update(choices=list(chats.keys()), value=current_chat_id), chats[current_chat_id]
 
-# Activar/desactivar descripción de imágenes
+# Enable/Disable image drescriptions
 def checkbox_action(checked):
-    global rag_estadistica
+    global rag_maths
     if checked:
-        rag_estadistica = rag(describe_imagenes=True)
+        rag_maths = rag(describe_imagenes=True)
     else:
-        rag_estadistica = rag(describe_imagenes=False)
+        rag_maths = rag(describe_imagenes=False)
     return chats[current_chat_id]
 
+# Empty the history of chats
 def delete_history_chats():
     global chats
     global current_chat_id
     chats = {'Chat 1':[]}
     current_chat_id = 'Chat 1'
-    # Actualizar la lista de chats en el Dropdown
+    # Refresh the dropdown list of chats and show the first chat empty
     return gr.update(choices=list(chats.keys()), value=list(chats.keys())[0]), chats['Chat 1']
 
-# Interfaz con Gradio
+# Gradio interface
 with gr.Blocks(fill_height=True) as demo:
     with gr.Row():
-        with gr.Column(scale=1):  # Menú lateral para chats
-            chat_list = gr.Dropdown(label="Historiales de Chat", choices=['Chat 1'], value='Chat 1')
-            delete_button = gr.Button("Borrar historial de chats")
-            new_chat_button = gr.Button("Nuevo Chat")
-            save_button = gr.Button("Guardar chats en local")
-            # Componente para cargar el archivo de texto
-            file_input = gr.File(file_count="single", file_types=[".txt"], label="Cargar historial de chat (txt)")
+        # First column
+        with gr.Column(scale=1):
+            chat_list = gr.Dropdown(label="Chat Histories", choices=['Chat 1'], value='Chat 1')
+            delete_button = gr.Button("Delete chat history")
+            new_chat_button = gr.Button("New Chat")
+            save_button = gr.Button("Save chats locally")
 
-        with gr.Column(scale=9):  # Chat principal
-            checkbox = gr.Checkbox(label="¿Describir imágenes del contexto? (respuesta más lenta)")
-            chatbot = gr.Chatbot(label="Chat con RAG", height="70vh")
-            input_box = gr.Textbox(label="Escribe tu mensaje:", interactive=True)
+            # To upload a chat history
+            file_input = gr.File(file_count="single", file_types=[".txt"], label="Upload a chat history (txt)")
 
-    # Funciones de interacción
-    # Crea un nuevo chat
+        # Second column
+        with gr.Column(scale=9):
+            checkbox = gr.Checkbox(label="Describe images from the context? (slower answer)")
+            chatbot = gr.Chatbot(label="Chat", height="70vh")
+            input_box = gr.Textbox(label="Write your message:", interactive=True)
+
+    # Interaction functions
+    # Create new chat
     new_chat_button.click(start_new_chat, [], [chat_list, chatbot])
 
-    # Borra el historial de chats y limpia la interfaz
+    # Delete the chat history and clear the interface
     delete_button.click(delete_history_chats, [], [chat_list, chatbot])
 
-    # Cambia la interfaz al cambiar de chat
+    # Change the interface when switching between chats
     chat_list.change(select_chat, [chat_list], chatbot)
 
-    # Activa/Desactiva la descripción de imágenes
+    # Enable/Disable image descriptions
     checkbox.change(checkbox_action, inputs=checkbox, outputs=chatbot)
 
-    # Guarda el historial de chat en local
+    # Save the chats in a text file
     save_button.click(save_chat_to_file, outputs=save_button)
     save_button.click(return_original_message, outputs=save_button)
 
-    # Permite mandarle el input a la llm y limpia el valor una vez mandado
+    # Allow sending the input to the LLM and clear the value once sent
     input_box.submit(chat, inputs=input_box, outputs=chatbot)
     input_box.submit(lambda x: gr.update(value=''), [],[input_box])
 
-    # Carga el archivo y redirige a un chat del archivo
+    # Load chat history from a file text and redirect to the last chat
     file_input.upload(load_chat_history, inputs=file_input, outputs=[chat_list, chatbot])
 
 demo.launch()
