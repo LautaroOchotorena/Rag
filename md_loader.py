@@ -1,5 +1,4 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import TextLoader
 from transformers import AutoTokenizer
@@ -20,20 +19,20 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device utilizado:', device)
 
-# Define el directorio donde están tus archivos PDF
+# Directory of the Markdown files
 md_directory = "./final_md"
 
-# Crea una lista para almacenar todos los documentos cargados
+# List to store all the documents
 splits_all_documents = []
-separators = ["."]
-# Itera sobre cada archivo md en el directorio
+
+# Iterate over each .md file in the directory
 for filename in os.listdir(md_directory):
-    if filename.endswith(".md"):  # Solo procesa archivos PDF
+    if filename.endswith(".md"):
         filepath = os.path.join(md_directory, filename)
         loader = TextLoader(filepath, encoding="utf-8")
         documents = loader.load()
 
-        # Configura el divisor de texto para dividir los documentos en fragmentos
+        # The splitter of the documents
         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                                                             model_name="gpt-4",
                                                             chunk_size=2500,
@@ -41,94 +40,103 @@ for filename in os.listdir(md_directory):
                                                         )
         splits = text_splitter.split_documents(documents) 
 
-        # Pongo un index para que se interprete mejor qué texto va después
+        # Add metadata such as an index to show the continuity of the documents and the book name
         for i, doc in enumerate(splits, start=1):
             doc.metadata["index"] = i
             doc.metadata['book'] = filename.replace(".md","")
-            # Elimino el metadato "source" ya que es redundante con "book"
+            # Delete the medata "source" because it is redundant
             del doc.metadata['source']
 
-        # Agrega los documentos cargados a la lista general
+        # Add the documents to the list
         splits_all_documents.extend(splits)
 
-# Función de preprocesamiento para separar referencias de ecuaciones
+# Preprocessing function to separate equation references
 def preprocess_formula(text):
-    # Patrón para detectar referencias de ecuaciones, como (3.8) o (3-8)
+    # Pattern to detect equation references, such as (3.8) or (3-8)
     equation_ref_pattern = r"\((\d+\.\d+|\d+-\d+)\)$"
-    # Reemplaza las referencias de ecuaciones con un marcador. Output: "[REF: 3.8]"
+    # Replace equation references with a much clear type of refeerence. 
+    # Output: "[REF: 3.8]"
     processed_text = re.sub(equation_ref_pattern, r" [REF: \g<0>]", text)
 
     return processed_text
 
-# Aplica el preprocesamiento a cada fragmento
+# Apply preprocessing to each fragment
 for fragment in splits_all_documents:
     fragment.page_content = preprocess_formula(fragment.page_content)
 
-# Inicializa el modelo de incrustación de HuggingFace
+# Embedding model
 embedding_model = VertexAIEmbeddings(model="textembedding-gecko@003")
-# dimension de 768
-tokenizer = AutoTokenizer.from_pretrained('dunzhang/stella_en_400M_v5', trust_remote_code=True)
+# dimension 768
+# the embedding model choosen doesn't let the acces to the tokenizer
+# so a default tokenizer is choosen just to figure if the fragments use less than
+# then maximum number of tokens
+tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2', trust_remote_code=True)
 
+# Maximum number of tokens supported by the embedding model
 max_tokens =  3072
-#max_tokens = tokenizer.model_max_length
-print('Máximo de tokens:', max_tokens)
-tokens_counts = [tokenizer(sentence.page_content, padding=False, truncation=False, return_tensors='pt')['input_ids'].shape[1] for sentence in splits_all_documents]
-print('Cantidad total de tokens de los documentos:', sum(tokens_counts))
+# max_tokens = tokenizer.model_max_length
+print('Maximum tokens:', max_tokens)
+# Count the tokens of each fragment
+tokens_counts = [tokenizer(sentence.page_content, padding=False, truncation=False,
+                           return_tensors='pt')['input_ids'].shape[1]
+                           for sentence in splits_all_documents]
+print('Total number of tokens in the documents:', sum(tokens_counts))
 
 max_3 = heapq.nlargest(3, set(tokens_counts))
-print('Top 3 fragmentos con más tokens:')
+print('Top 3 fragments with the most tokens:')
 for i, maximo in enumerate(max_3):
-    print(f'Fragmento {i+1}:')
+    print(f'Fragment {i+1}:')
     print(splits_all_documents[tokens_counts.index(maximo)].page_content)
 
 min_3 = heapq.nsmallest(3, set(tokens_counts))
-print("\nLos 3 fragmentos con menos tokens:")
+print("\nTop 3 fragments with the least tokens:")
 for i, min in enumerate(min_3):
-    print(f'Fragmento {i+1}:')
+    print(f'Fragment {i+1}:')
     print(splits_all_documents[tokens_counts.index(min)].page_content)
 
+# Plots the tokens of each fragment and compare to the maximum
 plt.plot(tokens_counts, marker='o', color='blue', linestyle='', alpha=0.3)
-# textos truncados a partir de 512 tokens
 plt.axhline(y=max_tokens, color='r', linestyle='--', label='Max')
 plt.xlabel('Index')
-plt.ylabel('Número de tokens')
-plt.title('Tokens de cada fragmento de texto')
+plt.ylabel('Number of tokens')
+plt.title('Tokens of each text fragment')
 plt.grid(True)
 plt.legend()
 plt.show()
 
-target_batch_size = 5461  # max batch size para ChromaDB
-
-# Crea la colección inicialmente con una primera carga de documentos
+# max batch size for ChromaDB
+batch_size = 5461
+# Create the collection initially with a first load of documents
 vectorstore = Chroma.from_documents(
-    documents=splits_all_documents[:target_batch_size],  # Procesa un batch inicial dentro del límite
+    documents=splits_all_documents[:batch_size],  # Process an initial batch within the limit
     embedding=embedding_model,
     collection_name='vectorstore',
     persist_directory="./chroma/",
-    # Sin collection_metadata dará los similarity_score_threshold negativos 
+    # Without collection_metadata, it will give negative similarity_score_thresholds.
     collection_metadata={"hnsw:space": "cosine"}
 )
 
-# añade los documentos restantes
-for i in range(target_batch_size, len(splits_all_documents), target_batch_size):
-    batch = splits_all_documents[i:i + target_batch_size]
+# Add the remaining documents
+for i in range(batch_size, len(splits_all_documents), batch_size):
+    batch = splits_all_documents[i:i + batch_size]
     vectorstore.add_documents(documents=batch)
 
 if __name__ == '__main__':
-    print('Primeros metadatos de los documentos:')
+    print('First metadata of the documents:')
     for i in range(3):
         print(f'{splits_all_documents[i].metadata}')
 
-    print('\nPrimeros chunks:')
+    print('\nFirst fragments:')
     for i in range(3):
         text = splits_all_documents[i].page_content.replace('\n', ' ')
-        print(f'Chunk {i+1}:\n', text)
-    
+        print(f'Fragment {i+1}:\n', text)
+
+    # In case the selected fragments don't exist
     try:
-        print('\nRandom chunks:')
+        print('\nRandom fragments:')
         i = random.randint(400, 800)
         for i in range(i, i+3):
             text = splits_all_documents[i].page_content.replace('\n', ' ')
-            print(f'Chunk {i+1}:\n', text)
+            print(f'Fragment {i+1}:\n', text)
     except IndexError:
-        print('Error al seleccionar fragmentos aleatorios:', IndexError)
+        print('Error selecting random fragments:', IndexError)

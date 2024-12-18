@@ -1,28 +1,25 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 import config_api_key
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.prompts import (ChatPromptTemplate, MessagesPlaceholder)
 import warnings
 import os
 import torch
-from langchain.retrievers import ContextualCompressionRetriever 
-from ragatouille import RAGPretrainedModel
 from langchain_core.runnables import RunnableLambda
 from langchain.chains import (create_history_aware_retriever, create_retrieval_chain)
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from describir_imagenes import process_context_with_images
+from describe_images import process_context_with_images
 from langchain_google_vertexai import VertexAIEmbeddings
 
 warnings.filterwarnings("ignore")
 
-# Deactuvate warning of TensorFlow
+# Disable the warning of TensorFlow
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Verify if CUDA is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print('Device utilizado:', device)
+print('Device used:', device)
 
 # LLM model 
 llm = ChatGoogleGenerativeAI(
@@ -39,11 +36,12 @@ vectorstore = Chroma(
     persist_directory="./chroma/"
 )
 
-retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"score_threshold": 0.3, "k": 10, "include_metadata": True})
+retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"score_threshold": 0.2, "k": 10})
 
 check_context = False
+i = 1
 # Function to describe images
-def describe_images(context):
+def describe_images_func(context):
     global check_context
     if check_context:
         print('Context:', context, '\n')
@@ -63,17 +61,19 @@ def format_context_with_metadata(documents):
     return documents
 
 class rag():
-    def __init__(self, describe_imagenes):
-        self.describe_imagenes = describe_imagenes
+    def __init__(self, describe_images_bool):
+        self.describe_images_bool = describe_images_bool
         self.processed_retriever = RunnableLambda(
-            lambda query: format_context_with_metadata([describe_images(context) if
-                                                        self.describe_imagenes else context
+            lambda query: format_context_with_metadata([describe_images_func(context) if
+                                                        self.describe_images_bool else context
                                                         for context in retriever.invoke(query)])
                                                         )
         # top = 7
         # # Reranking
-        # processed_retriever = RunnableLambda(
-        #     lambda query: sorted([describe_images(context) for context in compression_retriever.invoke(query)],
+        # self.processed_retriever = RunnableLambda(
+        #     lambda query: sorted([describe_images_func(context) if
+        #                           self.describe_images_bool else context
+        #                           for context in retriever.invoke(query)],
         #                          key=lambda x: x.metadata['relevance_score'], reverse=True)[:top]
         # )
 
@@ -123,20 +123,20 @@ class rag():
 
         self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
 
-rag_estadistica = rag(describe_imagenes = True)
+rag_maths = rag(describe_images_bool = True)
 if __name__ == '__main__':
     chat_history = []
 
-    question = r"En qué libro y capítulo encuentro componentes principales?"
+    question = r"In which chapters can I find power series?"
 
-    print(rag_estadistica.history_aware_retriever.invoke({"input": question, "chat_history": chat_history}))
+    print(rag_maths.history_aware_retriever.invoke({"input": question, "chat_history": chat_history})[0], '\n')
 
     print('Contextual retriever:')
-    print(rag_estadistica.retriever_procesado.invoke(question)[0], '\n')
+    print(rag_maths.processed_retriever.invoke(question)[0], '\n')
 
     # So that the change in context and processed context can be seen
-    check_context = True
+    check_context = False
 
-    respuesta = rag_estadistica.rag_chain.invoke({"input": question, "chat_history": chat_history})
+    respuesta = rag_maths.rag_chain.invoke({"input": question, "chat_history": chat_history})
     print('Question:', question)
     print('Answer:', respuesta['answer'])
