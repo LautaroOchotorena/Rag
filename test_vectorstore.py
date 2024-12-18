@@ -2,6 +2,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 import torch
 
+################################################################
+# Test the working of the vectorstore
+################################################################
+
 # Verify if CUDA is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -15,7 +19,7 @@ vectorstore = Chroma(
     persist_directory="."
 )
 
-query = '¿En qué página se encuentra componentes principales?'
+query = 'Give me an example of a limit'
 respuesta = vectorstore.search(query=query, search_type='similarity', k=3)
 
 print('Question:', query)
