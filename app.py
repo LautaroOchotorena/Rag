@@ -6,7 +6,7 @@ import time
 chats = {'Chat 1':[]}
 current_chat_id = 'Chat 1'
 
-rag_maths = rag(describe_imagenes=False)
+rag_maths = rag(describe_images_bool = False)
 
 # Convert the chats into a history format
 def format_chat_history(chat_history):
@@ -115,9 +115,9 @@ def load_chat_history(file):
 def checkbox_action(checked):
     global rag_maths
     if checked:
-        rag_maths = rag(describe_imagenes=True)
+        rag_maths = rag(describe_images_bool = True)
     else:
-        rag_maths = rag(describe_imagenes=False)
+        rag_maths = rag(describe_images_bool = False)
     return chats[current_chat_id]
 
 # Empty the history of chats
