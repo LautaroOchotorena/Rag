@@ -65,7 +65,7 @@ def compact_latex(latex_texts):
 def compact_latex_unit(latex_text):
     try:
         prompt = r"""Compact the following mathematical expression in LaTeX into plain text.
-        At the end of the compacted form, include "<end>".
+        At the end of the compacted form include "<end>".
         If there's text involded keep it as it is.
 
         Example:
@@ -93,7 +93,7 @@ def compact_tables(tables):
         Tables: {tables}.
 
         Only respond with the direct compacted form.
-        At the end of each compacted table, include '<end>''."""
+        At the end of each compacted table, include '<end>'."""
 
         response = llm.invoke(prompt)
         response_content = dict(response)['content']
@@ -149,7 +149,8 @@ def process_md_file(md_file_path, output_file_path):
                 n = 1
                 indices = random.sample(range(len(table_list_to_request)), n)
                 print('List:', [table_list_to_request[i] for i in indices])
-                print('\n\nCompated list:', [compacted[i] for i in indices], '\n\n')
+                print('\nCompated list:', [compacted[i] for i in indices],
+                      '\n################################')
 
             # Only if the compacted list is equal in elements to the table_list_to_request
             if len(table_list_to_request) == len(compacted):
@@ -161,7 +162,7 @@ def process_md_file(md_file_path, output_file_path):
             text = f'{table}\n'
             table_list_to_request = [table]
         
-        # If the len of the request less than 4000 and it isn't the last element
+        # If the len of the request less than 1000 and it isn't the last element
         else:
             text += f'{table}\n'
             table_list_to_request.append(table)
@@ -212,7 +213,8 @@ def process_md_file(md_file_path, output_file_path):
                     n = len(latex_list_to_request)
                 indices = random.sample(range(len(latex_list_to_request)), n)
                 print('List:', [latex_list_to_request[i] for i in indices])
-                print('\n\nCompated list:', [compacted_list[i] for i in indices], '\n\n')
+                print('\nCompated list:', [compacted_list[i] for i in indices],
+                      '\n################################')
 
             # Now if it does match the dimensions then replace
             if len(latex_list_to_request) == len(compacted_list):
@@ -226,7 +228,7 @@ def process_md_file(md_file_path, output_file_path):
             len_to_request = len(latex)
             latex_list_to_request = [latex]
 
-        # If it isn't the last element and the request is less than 3000 characters
+        # If it isn't the last element and the request is less than 1000 characters
         else:
             latex_list_to_request.append(latex)
             len_to_request += len(latex)
