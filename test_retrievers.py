@@ -26,29 +26,26 @@ vectorstore = Chroma(
 )
 
 query = 'Where can I find power series?'
-k = 5
+k = 3
 retriever = vectorstore.as_retriever(search_kwargs={"k": k})
 contexts = retriever.invoke(query)
 
 print('Question:', query)
-print(f'Using k={k} similarity:')
-print('Context:')
 for context in contexts:
-    print(context, '\n\n')
+    print(f'Using k={k} similarity:')
+    print(context, '\n\n################################')
 
 retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": k})
 contexts = retriever.invoke(query)
-print('Using mmr:')
-print('Context:')
 for context in contexts:
-    print(context, '\n\n')
+    print('Using mmr:')
+    print(context, '\n\n################################')
 
 retriever = vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.2, "k": k})
 contexts = retriever.invoke(query)
-print('Using similarity scores:')
 if contexts:
-    print('Context:')
     for context in contexts:
-        print(context, '\n\n')
+        print('Using similarity scores:')
+        print(context, '\n\n################################')
 else:
     print('Nothing in the context')

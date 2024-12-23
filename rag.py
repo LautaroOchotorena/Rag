@@ -39,7 +39,7 @@ vectorstore = Chroma(
 retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"score_threshold": 0.2, "k": 10})
 
 check_context = False
-i = 1
+
 # Function to describe images
 def describe_images_func(context):
     global check_context
@@ -57,7 +57,7 @@ def format_context_with_metadata(documents):
     Format the retrieved documents to include metadata in the context.
     """
     for doc in documents:
-        doc.page_content = f"{doc.page_content}\nmetadata={{'book': '{doc.metadata.get('book', 'desconocido')}', 'index':{doc.metadata.get('index', 'desconocido')}}}"
+        doc.page_content = f"{doc.page_content}\nmetadata={{'book': '{doc.metadata.get('book', 'unknown')}', 'index':{doc.metadata.get('index', 'unknown')}}}"
     return documents
 
 class rag():
@@ -78,7 +78,7 @@ class rag():
         # )
 
         contextualize_q_system_prompt = """
-        Given a chat history and the user's latest question, formulate a question that can be understood without the chat history.
+        Given a chat history and the user's latest question which might reference context in the chat history, formulate a question that can be understood without the chat history.
         DO NOT answer the question; simply rephrase it if necessary, and if not, return it as it is.
         """
 
@@ -89,7 +89,8 @@ class rag():
                 ("human", "{input}"),
             ]
         )
-        # Simplify the context and save it as history
+        # Reformulate the question with the chat history and the question
+        # and pass it to the retriever
         self.history_aware_retriever = create_history_aware_retriever(
             llm, self.processed_retriever, contextualize_q_prompt
         )
@@ -129,14 +130,18 @@ if __name__ == '__main__':
 
     question = r"In which chapters can I find power series?"
 
-    print(rag_maths.history_aware_retriever.invoke({"input": question, "chat_history": chat_history})[0], '\n')
+    # Let's see how it works the retriever with describe images enabled
+    print('Retriever with describe images:')
+    print(rag_maths.processed_retriever.invoke(question)[0],
+          '\n################################')
 
-    print('Contextual retriever:')
-    print(rag_maths.processed_retriever.invoke(question)[0], '\n')
+    # Generates the new question and retrieves the documents close to this
+    print(rag_maths.history_aware_retriever.invoke({"input": question, "chat_history": chat_history})[0],
+          '\n################################')
 
     # So that the change in context and processed context can be seen
-    check_context = False
+    check_context = True
 
-    respuesta = rag_maths.rag_chain.invoke({"input": question, "chat_history": chat_history})
+    answer = rag_maths.rag_chain.invoke({"input": question, "chat_history": chat_history})
     print('Question:', question)
-    print('Answer:', respuesta['answer'])
+    print('Answer:', answer['answer'])
