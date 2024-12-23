@@ -30,10 +30,10 @@ def process_context_with_images(context):
     return context
 
 if __name__ == "__main__":
-    # The image_path must be passed as it would be in the md folder
+    # The image_path must be passed as it would be in the md file
     image_path = "./images/fVN4MaqpD4VgIaHoaq6SvUh9KFCLgirRk.png"
-    image_path_correcto = "./md/merged_files/" + image_path.replace("./","")
+    correct_image_path = "./md/merged_files/" + image_path.replace("./","")
     start = time.time()
-    print(describe(image_path_correcto))
+    print(describe(correct_image_path))
     end = time.time()
     print(f"Execution time: {round(end - start, 2)} seconds")

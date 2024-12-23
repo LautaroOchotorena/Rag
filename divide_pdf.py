@@ -41,7 +41,7 @@ def process_pdfs_in_folder(folder_path, max_pages=500):
         if file_name.lower().endswith(".pdf"):
             input_pdf_path = os.path.join(folder_path, file_name)
             split_pdf(input_pdf_path, output_dir, max_pages)
-            print(f"Procesado: {file_name}")
+            print(f"Process: {file_name}")
 
 # Folder where the documents before splitting are stored
 pdfs_folder = "./docs/"
