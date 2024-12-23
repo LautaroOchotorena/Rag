@@ -17,6 +17,7 @@ warnings.filterwarnings("ignore")
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+# In case you use an embedding model locally, such as those from Hugging Face
 # Verify if CUDA is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device used:', device)

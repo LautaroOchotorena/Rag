@@ -16,8 +16,9 @@ warnings.filterwarnings("ignore")
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
+# In case you use an embedding model locally, such as those from Hugging Face
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print('Device utilizado:', device)
+print('Device used:', device)
 
 # Directory of the Markdown files
 md_directory = "./final_md"
@@ -87,12 +88,14 @@ print('Top 3 fragments with the most tokens:')
 for i, maximo in enumerate(max_3):
     print(f'Fragment {i+1}:')
     print(splits_all_documents[tokens_counts.index(maximo)].page_content)
+    print(f'\n################################')
 
 min_3 = heapq.nsmallest(3, set(tokens_counts))
 print("\nTop 3 fragments with the least tokens:")
 for i, min in enumerate(min_3):
     print(f'Fragment {i+1}:')
     print(splits_all_documents[tokens_counts.index(min)].page_content)
+    print(f'\n################################')
 
 # Plots the tokens of each fragment and compare to the maximum
 plt.plot(tokens_counts, marker='o', color='blue', linestyle='', alpha=0.3)
@@ -125,11 +128,13 @@ if __name__ == '__main__':
     print('First metadata of the documents:')
     for i in range(3):
         print(f'{splits_all_documents[i].metadata}')
+        print(f'\n################################')
 
     print('\nFirst fragments:')
     for i in range(3):
         text = splits_all_documents[i].page_content.replace('\n', ' ')
         print(f'Fragment {i+1}:\n', text)
+        print(f'\n################################')
 
     # In case the selected fragments don't exist
     try:
@@ -138,5 +143,6 @@ if __name__ == '__main__':
         for i in range(i, i+3):
             text = splits_all_documents[i].page_content.replace('\n', ' ')
             print(f'Fragment {i+1}:\n', text)
+            print(f'\n################################')
     except IndexError:
         print('Error selecting random fragments:', IndexError)

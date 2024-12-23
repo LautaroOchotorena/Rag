@@ -8,6 +8,7 @@ import config_api_key
 # Test the working of the vectorstore
 ################################################################
 
+# In case you use an embedding model locally, such as those from Hugging Face
 # Verify if CUDA is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
