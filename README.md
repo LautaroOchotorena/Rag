@@ -23,16 +23,19 @@ Keep in mind the structure of the folders
 │   ├── md/
 │   │   └── merged_files/
 │   │       └── images/
-│   └── prueba/
+│   └── final_md/
 ```
-The files inside provide an example without requiring all steps.
+The files inside provide an example without requiring all steps. Credits to [OpenStax](https://openstax.org/) that allows the usage of those books under a CC BY-NC-SA 4.0 license.
 
-Follow these steps to create your own chatbot:
+If you want to run this example just follow steps 1 to 3 and then skip to the step 9.
 
+Empty the folders and follow these steps to create your own chatbot based on your documents
+
+### Steps
 **1.** Clone the repository using git or download everything by yourself:
 ```bash
     git clone https://github.com/LautaroOchotorena/Rag
-    cd Walking-around-the-city
+    cd Rag
 ```
 **2.** Create a file called "config.json" and put
 ```
@@ -64,26 +67,23 @@ An alternative on Linux or Windows after creating your own environment:
     pip install -r requirements.txt
 ```
 
-Then activate your environment.
-
-Example in Conda:
+Then activate your environment. In Conda:
 ```bash
     conda activate rag
 ```
-and follow the [instructions to install pytorch](https://pytorch.org/get-started/locally/) to use **CUDA** if you have a GPU compatible with CUDA (remember to install the CUDA Toolkit compatible to your torch version) or **NO CUDA** if you want to run everything on CPU.
+In case of using an embedding model from Hugging Face I recommend to follow the [instructions to install pytorch](https://pytorch.org/get-started/locally/) to use **CUDA** if you have a GPU compatible with CUDA (remember to install the CUDA Toolkit compatible to your torch version) or **NO CUDA** if you want to run everything on CPU.
 
-**4.** Put the pdf documents inside the docs folder, acces to [SimpleTex](https://simpletex.net/) (it may ask you to create an account) and use the Online OCR where you need to pass all the documents (one by one) in order to convert them into a markdown file with latex notation. Export them with the images, this will download a folder with the md and a folder with the images.
-It can't process more than 500 pages per documents so if you have more than that you can use the [dividir_pdf.py](https://github.com/LautaroOchotorena/Rag/blob/master/dividir_pdf.py) to divide each documents into pieces of at least 500 pages. The pdf outputs will be stored in the divided_pdfs folder.<br>
+**4.** Put the pdf documents inside the "docs" folder, acces to [SimpleTex](https://simpletex.net/) (it may ask you to create an account) and use the Online OCR where you need to pass all the documents (one by one) in order to convert them into a markdown file with LaTeX notation. Export them with the images, this will download a .zip containing a folder with the md and a folder with the images.
+It can't process more than 500 pages per document so if you have more than that you can use the [divide_pdf.py](https://github.com/LautaroOchotorena/Rag/blob/master/divide_pdf.py) to divide each documents into pieces of at least 500 pages. Those pdf outputs will be stored in the *"divided_pdfs"* folder.<br>
 **Note:** At the moment of writting this SimpleTex doesn't support an api where you can do this efficiently and easily. You can use [Nougat](https://github.com/facebookresearch/nougat?tab=readme-ov-file) instead but it won't process images and you might have to change things in step 7.
 
-**5.** Check your new files: vertical tables and rarely (but it happended to me) some pages are skipped in the convertion.
-If this happens you can use [create_pdf.py](https://github.com/LautaroOchotorena/Rag/blob/master/crear_pdf.py) to select a range of pages of a pdf document to be download so it can be processed successfully with SimpleTex. The results should be pasted manually into the correspond md file.
+**5.** Put the folders (they are inside the .zip) created by SimpleTex inside the *"md"* folder. After that, run [combine_parts_and_images.py](https://github.com/LautaroOchotorena/Rag/blob/master/combine_parts_and_images.py). to combine the divided documents into a single one and also this puts all the images of each doc into a single folder. The outputs will be in the *"merged_files"* folder.
 
-**6.** Put the folders (they are inside the .zip) created by SimpleTex inside the md folder. After that, run [archivos_md.py](https://github.com/LautaroOchotorena/Rag/blob/master/archivos_md.py). to combine the divided documents into a single one and also put all the images of each doc into a single folder. The outputs will be in the merged_files folder.
+**6.** Check the .md files: vertical tables and rarely (but it happended to me) some pages are skipped in the convertion. To redo some of the pages use [extract_pdf_pages.py](https://github.com/LautaroOchotorena/Rag/blob/master/extract_pdf_pages.py) and select a range of pages to export so it can be processed successfully with SimpleTex. The results should be pasted manually into the correspond md file.
 
-**7.** Optional but usefull: use [formulas_into_text.py](https://github.com/LautaroOchotorena/Rag/blob/master/formulas_into_text.py) to replace the latex formulas into plain text (in a compacted way). This will helps a lot due to the reduction of characters using a compacted representation instead of the latex formula.
+**7.** Optional but usefull: use [formulas_into_text.py](https://github.com/LautaroOchotorena/Rag/blob/master/formulas_into_text.py) to replace the LaTeX formulas and tables into plain text (in a compacted way). This will helps a lot due to the reduction of characters/tokens using a compacted representation.
 
-**8.** Create the vectorstore using [md_loader.py](https://github.com/LautaroOchotorena/Rag/blob/master/md_loader.py). It will be stored locally.
+**8.** Create the vectorstore using [md_loader.py](https://github.com/LautaroOchotorena/Rag/blob/master/md_loader.py). It will be stored locally in the *"chroma"* folder.
 
 **9.** Ready to launch the app:
 ```bash
@@ -98,12 +98,12 @@ For example:
 
 | <h4>Document</h4> | <h4>Number of tokens</h4>  | <h4>Number of characters</h4>
 |-----------------------|--------------------|--------------------|
-| <h4>**Original**</h4>   | <h4>358,374</h4>  | <h4>976,153</h4>
-| <h4>**Compacted version**</h4>| <h4>227,832</h4> | <h4>658,651</h4>
+| <h4>**Original**</h4>   | <h4>485,433</h4>  | <h4>1,374,860</h4>
+| <h4>**Compacted version**</h4>| <h4>401,561</h4> | <h4>1,143,874</h4>
 
 </div>
 
-That implies a reduction of **32.5%** for the number of characters.
+That implies a reduction of **17%** for the number of characters.
 
 This helps with the embedding model that has a limit of tokens per chunk.
 
