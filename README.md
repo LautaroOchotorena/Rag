@@ -32,12 +32,23 @@ If you want to run this example just follow steps 1 to 3 and then skip to the st
 Empty the folders and follow these steps to create your own chatbot based on your documents
 
 ### Steps
-**1.** Clone the repository using git or download everything by yourself:
+**1.** If you want the examples to be included:
+
+Clone the repository using git or download everything by yourself:
 ```bash
     git clone https://github.com/LautaroOchotorena/Rag
     cd Rag
 ```
-**2.** Create a file called "config.json" and put
+If not:
+```bash
+    git clone --no-checkout https://github.com/LautaroOchotorena/Rag
+    cd Rag
+    git sparse-checkout init --cone
+    git sparse-checkout set */
+    git checkout master
+```
+
+**2.** Create a JSON file called "config.json" and put
 ```
 {
 	"api_key": "Gemini API KEY",
@@ -56,13 +67,15 @@ gcloud auth login
 ```
 to authenticate from a google account.
 
+**Note:** You can still visualize the chatbot (you can't chat) even without following this step. This might help in visualizing the chat_history examples.
+
 **3.** Using Conda or Miniconda (on Windows):
 ```bash
     conda env create -f environment.yaml
 ```
 This will install the environment and the dependencies needed.
 
-An alternative on Linux or Windows after creating your own environment:
+An alternative on Linux or Windows after creating your own environment (with Python 3.11.9):
 ```bash
     pip install -r requirements.txt
 ```
