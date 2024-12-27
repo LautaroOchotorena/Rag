@@ -10,10 +10,8 @@ The documents must be in english; otherwise, it will be necessary to switch to a
 </div>
 
 # Results
-<video width="1280" height="720" controls>
-  <source src="example_chats/example_video.mp4" type="video/mp4">
-  Your browser does not support the video element.
-</video>
+
+https://github.com/user-attachments/assets/4213ee83-c857-4ad8-954d-5b48b4da1204
 
 Some chat tests that I did are located in the *"chat_examples"* folder.
 
