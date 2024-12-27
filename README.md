@@ -1,7 +1,7 @@
 # RAG for mathematical documents
-This project aims to create a chatbot based on mathematical documents where you can interact with and ask about exercises, information about a topic, examples, other authors that the documents cite, etc.
+This project aims to create a chatbot based on mathematical documents, allowing users to interact with it and ask about exercises, information about a topic, examples, references to other authors cited in the documents, and more.
 
-The documents have to be in english otherwise it will be needed to change the embedding model to a multilingual one.
+The documents must be in english; otherwise, it will be necessary to switch to a multilingual embedding model.
 
 # Flow of the RAG
 
@@ -9,15 +9,20 @@ The documents have to be in english otherwise it will be needed to change the em
   <img src="flow_chart.png" alt="Flow Chart"/>
 </div>
 
-# Results obtained
+# Results
+<video width="1280" height="720" controls>
+  <source src="chat_examples/video_example.mp4" type="video/mp4">
+  Your browser does not support the video element.
+</video>
 
-
+Some chat tests that I did are located in the *"chat_examples"* folder.
 
 # How to run it
 
-Keep in mind the structure of the folders
+Keep in mind the structure of the folders:
 ```bash
 ├── Rag/
+├── ├── chat_examples/
 │   ├── docs/
 │   │   └── divided_pdfs/
 │   ├── md/
@@ -25,11 +30,11 @@ Keep in mind the structure of the folders
 │   │       └── images/
 │   └── final_md/
 ```
-The files inside provide an example without requiring all steps. Credits to [OpenStax](https://openstax.org/) that allows the usage of those books under a CC BY-NC-SA 4.0 license.
+The files in these folders provide an example without requiring all the steps. Credits to [OpenStax](https://openstax.org/) that allows the usage of those books under a CC BY-NC-SA 4.0 license.
 
-If you want to run this example just follow steps 1 to 3 and then skip to the step 9.
+If you want to run this example, just follow steps 1 to 3 and then skip to the step 9.
 
-Empty the folders and follow these steps to create your own chatbot based on your documents
+Empty the folders and follow these steps to create your own chatbot based on your documents.
 
 ### Steps
 **1.** If you want the examples to be included:
@@ -51,26 +56,25 @@ If not:
     mkdir md
 ```
 
-**2.** Create a JSON file called "config.json" and put
-```
-{
-	"api_key": "Gemini API KEY",
-	"PROJECT_ID": "Project ID Google AI Studio"
-}
+**2.** Create a JSON file called "config.json":
+```bash
+echo '{"api_key": "Gemini API KEY", "PROJECT_ID": "Project ID Google AI Studio"}' > config.json
 ```
 For this project I used Gemini for the LLM and VertexAIEmbeddings for the vectorstore.
 To obtain the keys: Create a Google Cloud project, then generate the [Gemini API KEY](https://aistudio.google.com/app/apikey) and [enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
 
-Don't forget to replace the values in the json file.
+Don't forget to replace the values in the JSON file.
 
-Also you need to [Install Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk#windows) so follow the steps provided in the link and then run on the terminal
+Also you need to [Install Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk#windows) so follow the steps provided in the link, and then run on the terminal:
 
 ```bash
 gcloud auth login
 ```
-to authenticate from a google account.
 
-**Note:** You can still visualize the chatbot (you can't chat) even without following this step. This might help in visualizing the chat_history examples.
+to authenticate with a Google account.
+
+> [!NOTE]  
+You can still visualize the chatbot (though you can't chat) even without following this step. This might help in reviewing the chats from the folder *"chat_examples"*.
 
 **3.** Using Conda or Miniconda (on Windows):
 ```bash
@@ -78,7 +82,7 @@ to authenticate from a google account.
 ```
 This will install the environment and the dependencies needed.
 
-An alternative on Linux or Windows after creating your own environment (with Python 3.11.9):
+An alternative on Linux or Windows after creating your own environment (with Python 3.11.9) is:
 ```bash
     pip install -r requirements.txt
 ```
@@ -87,19 +91,23 @@ Then activate your environment. In Conda:
 ```bash
     conda activate rag
 ```
-In case of using an embedding model from Hugging Face I recommend to follow the [instructions to install pytorch](https://pytorch.org/get-started/locally/) to use **CUDA** if you have a GPU compatible with CUDA (remember to install the CUDA Toolkit compatible to your torch version) or **NO CUDA** if you want to run everything on CPU.
 
-**4.** Put the pdf documents inside the "docs" folder, acces to [SimpleTex](https://simpletex.net/) (it may ask you to create an account) and use the Online OCR where you need to pass all the documents (one by one) in order to convert them into a markdown file with LaTeX notation. Export them with the images, this will download a .zip containing a folder with the md and a folder with the images.
-It can't process more than 500 pages per document so if you have more than that you can use the [divide_pdf.py](https://github.com/LautaroOchotorena/Rag/blob/master/divide_pdf.py) to divide each documents into pieces of at least 500 pages. Those pdf outputs will be stored in the *"divided_pdfs"* folder.<br>
-**Note:** At the moment of writting this SimpleTex doesn't support an api where you can do this efficiently and easily. You can use [Nougat](https://github.com/facebookresearch/nougat?tab=readme-ov-file) instead but it won't process images and you might have to change things in step 7.
+In case you are using an embedding model from Hugging Face, I recommend following the [instructions to install PyTorch](https://pytorch.org/get-started/locally/) to set up **CUDA** if you have a GPU compatible with CUDA (remember to install the CUDA Toolkit compatible with your PyTorch version) or **NO CUDA** if you want to run everything on the CPU.
 
-**5.** Put the folders (they are inside the .zip) created by SimpleTex inside the *"md"* folder. After that, run [combine_parts_and_images.py](https://github.com/LautaroOchotorena/Rag/blob/master/combine_parts_and_images.py). to combine the divided documents into a single one and also this puts all the images of each doc into a single folder. The outputs will be in the *"merged_files"* folder.
+**4.** Put the pdf documents inside the *"docs"* folder, acces to [SimpleTex](https://simpletex.net/) (it may ask you to create an account) and use the Online OCR to process the documents (one by one) to convert them into a Markdown file with LaTeX notation. Export them with the images, and this will download a .zip containing a folder with the .md and a folder with the images.
+It can't process more than 500 pages per document, so if you have more than that you can use the [divide_pdf.py](https://github.com/LautaroOchotorena/Rag/blob/master/divide_pdf.py) script to divide each document into pieces of up to 500 pages. The resulting PDF files will be stored in the *"divided_pdfs"* folder.<br>
+> [!NOTE]  
+At the time of writing this, SimpleTex doesn't support an API that allows you to do this efficiently and easily. You can use [Nougat](https://github.com/facebookresearch/nougat?tab=readme-ov-file) instead, but it won't process images, and you might need to makes changes in step 7.
 
-**6.** Check the .md files: vertical tables and rarely (but it happended to me) some pages are skipped in the convertion. To redo some of the pages use [extract_pdf_pages.py](https://github.com/LautaroOchotorena/Rag/blob/master/extract_pdf_pages.py) and select a range of pages to export so it can be processed successfully with SimpleTex. The results should be pasted manually into the correspond md file.
+**5.** Put the folders (which are inside the .zip file) created by SimpleTex into the *"md"* folder. After that, run the [combine_parts_and_images.py](https://github.com/LautaroOchotorena/Rag/blob/master/combine_parts_and_images.py) script to combine the divided documents into a single file, and it will also place all the images from each document into a single folder. The outputs will be saved in the *"merged_files"* folder.
 
-**7.** Optional but usefull: use [formulas_into_text.py](https://github.com/LautaroOchotorena/Rag/blob/master/formulas_into_text.py) to replace the LaTeX formulas and tables into plain text (in a compacted way). This will helps a lot due to the reduction of characters/tokens using a compacted representation.
+**6.** Check the .md files for vertical tables, as they might not be recognized correctly during the conversion, and rarely (though it happended to me) some pages may be skipped. To redo some of the pages, use the [extract_pdf_pages.py](https://github.com/LautaroOchotorena/Rag/blob/master/extract_pdf_pages.py) script and select a range of pages to export so they can be processed successfully with SimpleTex. The results should be pasted manually into the correspond .md file.
 
-**8.** Create the vectorstore using [md_loader.py](https://github.com/LautaroOchotorena/Rag/blob/master/md_loader.py). It will be stored locally in the *"chroma"* folder.
+**7.** Optional but usefull:
+
+Use the [formulas_into_text.py](https://github.com/LautaroOchotorena/Rag/blob/master/formulas_into_text.py) script to replace the LaTeX formulas and tables with plain text (in a compact form). This will helps a lot due to the reduction of characters/tokens using a compact representation.
+
+**8.** Create the vectorstore using the [md_loader.py](https://github.com/LautaroOchotorena/Rag/blob/master/md_loader.py) script. It will be stored locally in the *"chroma"* folder.
 
 **9.** Ready to launch the app:
 ```bash
@@ -108,7 +116,9 @@ It can't process more than 500 pages per document so if you have more than that 
 It will run locally.
 
 ## Reduction of characters
-The usage of the **step 7** makes a lot of difference. <br>
+> [!TIP]
+The use of **step 7** makes a big difference.
+
 For example:
 <div align="center">
 
@@ -119,11 +129,11 @@ For example:
 
 </div>
 
-That implies a reduction of **17%** for the number of characters.
+This implies a reduction of **17%** in the number of characters.
 
-This helps with the embedding model that has a limit of tokens per chunk.
+This helps with the embedding model, which has a token limit per chunk.
 
-Now you can store more data into a chunk.
+Now you can store more data in a chunk.
 
 # Other implementations
-It would be much easier to implement [MathPix](https://mathpix.com/) as a [MathPixPDFLoader](https://python.langchain.com/docs/integrations/document_loaders/mathpix/) but unfortunately it is a paid service.
+It would be much easier to implement [MathPix](https://mathpix.com/) as a [MathPixPDFLoader](https://python.langchain.com/docs/integrations/document_loaders/mathpix/), but unfortunately, it is a paid service.
