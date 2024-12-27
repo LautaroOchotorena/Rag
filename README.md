@@ -46,6 +46,9 @@ If not:
     git sparse-checkout init --cone
     git sparse-checkout set */
     git checkout master
+    mkdir docs
+    mkdir final_md
+    mkdir md
 ```
 
 **2.** Create a JSON file called "config.json" and put
