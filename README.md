@@ -11,7 +11,7 @@ The documents must be in english; otherwise, it will be necessary to switch to a
 
 # Results
 <video width="1280" height="720" controls>
-  <source src="chat_examples/video_example.mp4" type="video/mp4">
+  <source src="chat_examples/example_video.mp4" type="video/mp4">
   Your browser does not support the video element.
 </video>
 
