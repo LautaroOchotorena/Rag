@@ -20,7 +20,7 @@ Some chat tests that I did are located in the *"chat_examples"* folder.
 Keep in mind the structure of the folders:
 ```bash
 ├── Rag/
-├── ├── chat_examples/
+│   ├── chat_examples/
 │   ├── docs/
 │   │   └── divided_pdfs/
 │   ├── md/
