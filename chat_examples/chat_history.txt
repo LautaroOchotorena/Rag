@@ -1,0 +1,63 @@
+Chat ID: Chat 1
+User: In which books can I find power series?
+Bot: Power series are covered in *Calculus Volume 2*.
+
+User: give me examples
+Bot: The book *Calculus Volume 2* provides several examples of power series, including:
+
+* **Geometric series:**  ∑_{n=0}^∞ xⁿ = 1/(1-x)  for |x| < 1.  This is a fundamental example used to derive many other power series.
+
+* **Power series for 1/(1-x)²:** Derived by differentiating the geometric series term-by-term.
+
+* **Power series for ln(1+x):** Derived by integrating the power series for 1/(1+x) term-by-term.
+
+* **Power series for tan⁻¹x:**  Derived similarly through integration.
+
+* **Binomial series:** The Maclaurin series for (1+x)^r, which is a generalization of the binomial theorem to non-integer exponents.
+
+* **Taylor series for eˣ, sin x, and cos x:** These are classic examples of Taylor series, which are power series representations of functions centered around a specific point.  The book shows how to derive these series and uses them in various applications.
+
+* **Power series solutions to differential equations:** The text demonstrates how to find power series solutions for differential equations like Airy's equation, which cannot be solved using elementary functions.
+
+* **Using power series to evaluate nonelementary integrals:**  The book shows how to approximate integrals of functions whose antiderivatives are not elementary functions (like ∫e^(-x²)dx) by representing the integrand as a power series and integrating term-by-term.
+
+
+The book also explores how to manipulate power series through addition, subtraction, multiplication, differentiation, and integration to create new power series representations for various functions.  Many examples illustrate these techniques.
+
+
+Chat ID: Chat 2
+User: give me an exercise of limits obtained from the book context
+Bot: Here's an exercise on limits from the provided text:
+
+**Exercise:** Evaluate  lim<sub>x→3</sub> (x² - 3x) / (2x² - 5x - 3)
+
+This exercise is directly from Example 2.17 in the provided text.  The example demonstrates the "factor-and-cancel" technique for evaluating limits where direct substitution results in the indeterminate form 0/0.  The solution involves factoring the numerator and denominator to simplify the expression before applying limit laws.
+
+
+Primary Book Used: Calculus Volume 1
+
+
+Chat ID: Chat 3
+User: give me other authors to study calculus
+Bot: The provided text mentions several authors of calculus textbooks.  Besides Gilbert Strang and Edwin "Jed" Herman (the senior contributing authors of the OpenStax Calculus text),  other contributing authors listed include:
+
+* Catherine Abbott
+* Nicoleta Virginia Bila
+* Sheri J. Boyd
+* Joyati Debnath
+* Valeree Falduto
+* Joseph Lakey
+* Julie Levandosky
+* David McCune
+* Michelle Merriweather
+* Kirsten R. Messer
+* Alfred K. Mulzet
+* William Radulovich
+* Erica M. Rutter
+* David Smith
+* Elaine A. Terry
+* David Torain
+
+However, this list is not exhaustive of all calculus authors.  Many other authors have written successful calculus textbooks.  To find more, I would suggest searching online for "calculus textbooks" or browsing the mathematics section of a university bookstore or library.
+
+
