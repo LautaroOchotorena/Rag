@@ -66,7 +66,7 @@ for fragment in splits_all_documents:
     fragment.page_content = preprocess_formula(fragment.page_content)
 
 # Embedding model
-embedding_model = VertexAIEmbeddings(model="textembedding-gecko@003")
+embedding_model = VertexAIEmbeddings(model="text-embedding-005")
 # dimension 768
 # the embedding model choosen doesn't let the acces to the tokenizer
 # so a default tokenizer is choosen just to figure if the fragments use less than

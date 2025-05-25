@@ -15,7 +15,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 # embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/LaBSE',
 #                                        model_kwargs={'device': device})
 
-embedding_model = VertexAIEmbeddings(model="textembedding-gecko@003")
+embedding_model = VertexAIEmbeddings(model="text-embedding-005")
 
 # Loading the vectorstore
 vectorstore = Chroma(
