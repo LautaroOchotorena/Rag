@@ -67,6 +67,7 @@ Also you need to [Install Google Cloud CLI](https://cloud.google.com/sdk/docs/in
 
 ```bash
 gcloud auth login
+gcloud auth application-default login
 ```
 
 to authenticate with a Google account.
