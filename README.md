@@ -135,3 +135,6 @@ Now you can store more data in a chunk.
 
 # Other implementations
 It would be much easier to implement [MathPix](https://mathpix.com/) as a [MathPixPDFLoader](https://python.langchain.com/docs/integrations/document_loaders/mathpix/), but unfortunately, it is a paid service.
+
+# Potential problems
+The embedding model may have a retirement date, so it might need to be replaced after that. To check the current model versions and their lifecycle, click [here](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions).
