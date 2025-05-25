@@ -28,7 +28,7 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.1
 )
 
-embedding_model = VertexAIEmbeddings(model="textembedding-gecko@003")
+embedding_model = VertexAIEmbeddings(model="text-embedding-005")
 
 # Loading the vectorstore
 vectorstore = Chroma(
